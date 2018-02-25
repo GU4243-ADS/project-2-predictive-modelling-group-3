@@ -22,6 +22,7 @@ if(!require("gbm")){
 
 library("EBImage")
 library("gbm")
+library("pbapply")
 ```
 
 ### Step 0: Specify directories.
@@ -67,11 +68,36 @@ model_labels <- paste("GBM with depth =", model_values)
 
 ### Step 2: Import training images class labels.
 
+
+```{r}
+n_files <- length(list.files(img_train_dir))
+n_files
+```
+
+
+We read in all the images and store their dimensions in the `dat` matrix.
+```{r}
+dat <- matrix(NA, nrow = n_files, ncol = 3) 
+imgs <- vector("list", n_files)
+
+for(i in 1:n_files){
+  img <- readImage(paste0(img_train_dir,  "pet", i, ".jpg"))
+  imgs[[i]] <- img
+  dat[i, 1:length(dim(img))] <- dim(img)
+}
+```
+
 Below, we code dog as 1 and cat as 0. 
 
 ```{r train_label}
 label_train <- read.table(paste(experiment_dir, "train_label.txt", sep = ""), header = F)
 label_train <- as.numeric(unlist(label_train) == "dog") # turn into a binary -- 1 is dog. 
+```
+
+Resize all images.
+```{r}
+img_resized = pblapply(imgs, function(img) { resize(img, 128, 128) })
+dim(img_resized[[1]])
 ```
 
 ### Step 3: Construct visual features
@@ -80,7 +106,7 @@ For this simple example, we use the row averages of raw pixel values as the visu
 
 `feature.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features that are required by all the models you are going to evaluate later. 
 
-Maybe we think that the row right where the bottom of the 9's circle starts might be darker for the 9 than the 7. 
+
 ```{r}
 ## having trouble on this section
 sift_feature_dir <- "../data/train-features/" # This will be modified for different data sets.
@@ -93,22 +119,25 @@ y_trainSIFT<- train_SIFT$y
 
 ```{r feature}
 
-# source("../lib/feature.R")
-# # reads in all the image files, calculates row means, stores all info in matrix. Now we have labels 1 or 0 for 7 or 9 in a 16 dimensional space. 
-# tm_feature_train <- NA
-# if(run.feature.train){
-#   tm_feature_train <- system.time(dat_train <- feature(img_train_dir, "train", 
-#                                                        data_name = "zip", export = TRUE))
-# }
-# 
+source("../lib/feature.R")
+# reads in all the image files, calculates row means, stores all info in matrix. 
+
+tm_feature_train <- NA
+if(run.feature.train){
+  tm_feature_train <- system.time(dat_train <- feature(img_train_dir, export = TRUE))
+}
+
+
+# Work on testing features later
+
 # tm_feature_test <- NA
 # if(run.feature.test){
-#   tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test", 
+#   tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test",
 #                                                      data_name = "zip", export = TRUE))
 # }
-# 
-# #save(dat_train, file = "../output/feature_train.RData")
-# #save(dat_test, file = "../output/feature_test.RData")
+
+#save(dat_train, file = "../output/feature_train.RData")
+#save(dat_test, file = "../output/feature_test.RData")
 ```
 
 ### Step 4: Train a classification model with training images (and the visual features constructed above)
