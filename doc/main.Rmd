@@ -108,7 +108,7 @@ For this simple example, we use the row averages of raw pixel values as the visu
 `feature.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features that are required by all the models you are going to evaluate later. 
 
 
-```{r}
+```{r SIFT features}
 ## having trouble on this section
 sift_feature_dir <- "../data/train-features/" # This will be modified for different data sets.
 img_sift_dir  <- paste(sift_feature_dir, sep="")
@@ -118,7 +118,8 @@ X_trainSIFT<- train_SIFT[, -5001]
 y_trainSIFT<- train_SIFT$y
 ```
 
-```{r feature}
+Row means features to use temporarily. 
+```{r rowmeans features}
 source("../lib/feature.R")
 # reads in all the image files, calculates row means, stores all info in matrix. 
 
@@ -139,6 +140,17 @@ save(dat_train, file = "../output/feature_train.RData")
 #save(dat_test, file = "../output/feature_test.RData")
 ```
 
+HOG features
+```{r HOG features}
+source("../lib/features_HOG.R")
+tm_feature_train <- NA
+if(run.feature.train){
+  tm_feature_train <- system.time(hog_train <- feature(img_train_dir, export = TRUE))
+}
+
+save(hog_train, file = "../output/HOG_features.RData")
+```
+
 ### Step 4: Train a classification model with training images (and the visual features constructed above)
 
 Call the train model and test model from library. 
@@ -155,6 +167,7 @@ Call the train model and test model from library.
   
 ```{r loadlib}
 source("../lib/train.R")
+source("../lib/RandomForest_train.Rmd")
 source("../lib/test.R")
 ```
 Train function runs GBM function and test just uses the fitted training model and our data to make some predictions. 
