@@ -2,9 +2,10 @@
 ### Construct visual features for training/testing images ###
 #############################################################
 
-### Authors: Yuting Ma/Tian Zheng
-### Project 3
-### ADS Spring 2017
+### Authors: Sophie Beiers
+### Based off of code by: Yuting Ma/Tian Zheng
+### Project 2
+### ADS Spring 2018
 
 feature <- function(img_dir, export=T){
   
@@ -19,23 +20,23 @@ feature <- function(img_dir, export=T){
   
   # img_train_dir is where image files are stored
   n_files <- length(list.files(img_dir))
-
-  
-  ### determine img dimensions
-  # img0 <-  readImage(paste0(img_train_dir, "pet", i, ".jpg"))
-  # mat1 <- as.matrix(img0)
-  # n_r  <- nrow(img0)
   
   ### store vectorized pixel values of images
-  dat <- matrix(NA, nrow = n_files, ncol = 3) 
+  dat <- matrix(NA, n_files, ncol = 150) 
   for(i in 1:n_files){
     img     <- readImage(paste0(img_dir, "pet", i, ".jpg"))
-    dat[i,] <- rowMeans(img)
+    img_bw <- channel(img, "gray")
+    img_bw <- resize(img_bw, 150)
+    dat[i,] <- rowMeans(img_bw)
   }
   
   ### output constructed features
   if(export){
-    save(dat, file = paste0("../output/feature_.RData"))
+    save(dat, file = paste0("../output/feature_train.RData"))
   }
   return(dat)
 }
+
+
+
+

@@ -100,6 +100,7 @@ img_resized = pblapply(imgs, function(img) { resize(img, 128, 128) })
 dim(img_resized[[1]])
 ```
 
+
 ### Step 3: Construct visual features
 
 For this simple example, we use the row averages of raw pixel values as the visual features. Note that this strategy **only** works for images with the same number of rows. For some other image datasets, the feature function should be able to handle heterogeneous input images. Save the constructed features to the output subfolder.
@@ -118,7 +119,6 @@ y_trainSIFT<- train_SIFT$y
 ```
 
 ```{r feature}
-
 source("../lib/feature.R")
 # reads in all the image files, calculates row means, stores all info in matrix. 
 
@@ -126,7 +126,6 @@ tm_feature_train <- NA
 if(run.feature.train){
   tm_feature_train <- system.time(dat_train <- feature(img_train_dir, export = TRUE))
 }
-
 
 # Work on testing features later
 
@@ -136,7 +135,7 @@ if(run.feature.train){
 #                                                      data_name = "zip", export = TRUE))
 # }
 
-#save(dat_train, file = "../output/feature_train.RData")
+save(dat_train, file = "../output/feature_train.RData")
 #save(dat_test, file = "../output/feature_test.RData")
 ```
 
