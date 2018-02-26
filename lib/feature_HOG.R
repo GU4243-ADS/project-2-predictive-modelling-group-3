@@ -27,7 +27,7 @@ feature<-function(img_dir, export=TRUE){
   for(i in 1:n_files){
     img <- readImage(paste0(img_dir, "pet", i, ".jpg"))
     #img_bw <- channel(img, "gray") # if we choose to make images BW
-    img<- resize(img, 150)
+    img <- resize(img, 150, 150)
     data[i,] <- HOG(img)
   }
   
@@ -42,3 +42,4 @@ HOG_features <- feature(img_dir)
 write.csv(HOG_features,"../output/HOG_features.csv")
 
 
+# may want to use HOG_apply ? https://cran.r-project.org/web/packages/OpenImageR/vignettes/The_OpenImageR_package.html

@@ -92,6 +92,7 @@ Below, we code dog as 1 and cat as 0.
 ```{r train_label}
 label_train <- read.table(paste(experiment_dir, "train_label.txt", sep = ""), header = F)
 label_train <- as.numeric(unlist(label_train) == "dog") # turn into a binary -- 1 is dog. 
+write.csv(label_train, '../output/label_train.csv')
 ```
 
 Resize all images.
@@ -142,13 +143,14 @@ save(dat_train, file = "../output/feature_train.RData")
 
 HOG features
 ```{r HOG features}
-source("../lib/features_HOG.R")
+source("../lib/feature_HOG.R")
 tm_feature_train <- NA
 if(run.feature.train){
   tm_feature_train <- system.time(hog_train <- feature(img_train_dir, export = TRUE))
 }
 
 save(hog_train, file = "../output/HOG_features.RData")
+
 ```
 
 ### Step 4: Train a classification model with training images (and the visual features constructed above)
