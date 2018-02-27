@@ -1,0 +1,20 @@
+To Extract Features from SIFT
+
+Make sure to copy the train-features folder to <../data/train-features>
+
+```{r}
+features_all = list()
+keypoints_all = list()
+
+sift_feature_dir <- "../data/train-features/" # This will be modified for different data sets.
+
+for (i in 1:2000){
+  file = sprintf("pet%i.jpg.sift.RData", i)
+  file_path = paste0(sift_feature_dir,file)
+  load(file_path)
+  features_all[[i]] = features
+  keypoints_all[[i]] = keypoints
+}
+```
+
+Now there should be a features_all, and keypoints_all, both length 2000 lists. pet1.jpg.sift corrosponds to features_all[1], etc.
