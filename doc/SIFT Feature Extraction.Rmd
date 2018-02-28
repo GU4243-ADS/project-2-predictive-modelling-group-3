@@ -15,6 +15,18 @@ for (i in 1:2000){
   features_all[[i]] = features
   keypoints_all[[i]] = keypoints
 }
+
+d <- data.frame()
+for (i in 1:2000){
+  d <- rbind(d, c(features_all[[i]]))
+}
+# Attempting to make into a matrix below
+# df <- do.call("rbind",features_all)
+# max.len <- max(sapply(features_all, length))
+# features_all_list <- lapply(features_all, function(x) {c(x, rep(NA, max.len - length(x)))})
+# features_all_matrix <- do.call(rbind, features_all_list)
+#write.csv(features_all, "../output/SIFT_features.csv")
+
 ```
 
 Now there should be a features_all, and keypoints_all, both length 2000 lists. pet1.jpg.sift corrosponds to features_all[1], etc.
