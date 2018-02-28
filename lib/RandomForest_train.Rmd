@@ -1,0 +1,151 @@
+---
+title: "RandomForest"
+author: "Sophie Beiers"
+date: "2/24/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/Documents/GitHub/project-2-predictive-modelling-group-3/doc")
+```
+
+## Load libraries
+```{r}
+if(!require("randomForest")){
+  install.packages("randomForest")
+}
+if(!require("caret")){
+  install.packages("caret")
+}
+library(randomForest)
+library(caret)
+library(rfUtilities)
+```
+
+## Set-up 
+## HOG features
+```{r}
+features <- read.csv("../output/HOG_features.csv")
+label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
+label.train$x <- as.factor(label.train$x) # x is whether photo is dog or cat
+
+set.seed(2008)
+K <- 15 # number of CV folds
+
+
+```
+
+## Training and Testing
+```{r}
+in_train <- createDataPartition(y = label.train$x,
+                                p = 3 / 4, 
+                                list = FALSE)
+
+training <- features[ in_train, ]
+testing  <- features[-in_train, ]
+
+x.train <- features[ in_train, ]
+y.train <- label.train[ in_train, 2 ]
+
+x.test <- features[ -in_train, ]
+y.test <- label.train[ -in_train, 2 ]
+
+```
+
+## Error testing: finding best number of trees 
+Based on code by: Yuting Ma (ADS Spring 2016)
+```{r}
+train<- function(df, label, N){
+
+  fit <- randomForest(as.factor(y.train) ~ ., data = training, importance = TRUE, ntree = N)
+  return(fit)
+}
+
+test<- function(rfmodel, df){
+  pred <-predict(rfmodel, newdata = df)
+  return (pred)
+}
+
+errors <- c()
+N <- c(100, 200, 300, 400, 500, 600, 700, 800, 900)
+
+for(i in 1:9){
+
+  fit <- train(x.train, y.train, N[i])
+
+  pred_testing <- test(fit, x.test)
+
+  errors[i] <- mean(pred_testing != as.factor(y.test))
+  cat(N[i]," trees has ", 1 - errors[i], "accuracy in prediction rate" )
+
+}
+```
+
+```{r}
+1 - min(errors) ## best model uses 600 trees with a predication accuracy rate of 0.752. 
+```
+
+
+
+
+## Cross Validation
+Based on code by Yuting Ma (Spring 2016)
+```{r}
+m <- length(y.train)
+m.fold <- floor(m/K)
+s <- sample(rep(1:K, c(rep(m.fold, K-1), m-(K-1)*m.fold))) 
+cv.error <- rep(NA, K)
+
+for (i in 1:K){
+  train.data <- x.train[s != i,]
+  train.label <- y.train[s != i]
+  test.data <- x.train[s == i,]
+  test.label <- y.train[s == i]
+  
+  fit <- tuneRF(train.data, as.factor(train.label), doBest = TRUE) 
+  pred <- predict(fit, test.data)
+  cv.error[i] <- mean(pred != test.label)
+}
+
+# Get the lowest error rate of cv
+best <- which.min(cv.error)
+```
+
+## Model 
+
+```{r}
+#system.time -- to find time it takes to run
+rf <- tuneRF(x.train[s != best,], as.factor(y.train[s != best]), ntree = 600, doBest = TRUE)
+
+rf_baseline <- randomForest(y.train ~ ., 
+                   data = training, ntree = 600,
+                   importance = TRUE)
+
+plot(rf)
+rf
+
+# predict using model
+predictions <- predict(rf, newdata = testing, type = "response", 
+                       n.trees = 600)
+# confusion matrix 
+cm <- table(y.test, predictions)
+
+# prediction rate
+mean(y.test == predict(rf, newdata = testing, type = "class"))
+
+
+```
+
+
+## SIFT features 
+```{r}
+# features <- read.csv("../output/SIFT_features.csv")
+# label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
+# label.train$x <- as.factor(label.train$x) # x is whether photo is dog or cat
+
+```
+
+
+
+
