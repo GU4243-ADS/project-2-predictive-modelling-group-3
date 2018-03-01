@@ -23,7 +23,7 @@ feature<-function(img_dir, export=TRUE){
   n_files <- length(list.files(img_dir))
   
   ### calculate HOG of images
-  data <- matrix(NA, n_files, ncol = 54) 
+  data <- matrix(NA, n_files, ncol = 108) 
   for(i in 1:n_files){
     img <- readImage(paste0(img_dir, "pet", i, ".jpg"))
     #img_bw <- channel(img, "gray") # if we choose to make images BW
