@@ -87,36 +87,11 @@ for(i in 1:9){
 ```
 
 
-
-
-## Cross Validation
-Based on code by Yuting Ma (Spring 2016)
-```{r}
-m <- length(y.train)
-m.fold <- floor(m/K)
-s <- sample(rep(1:K, c(rep(m.fold, K-1), m-(K-1)*m.fold))) 
-cv.error <- rep(NA, K)
-
-for (i in 1:K){
-  train.data <- x.train[s != i,]
-  train.label <- y.train[s != i]
-  test.data <- x.train[s == i,]
-  test.label <- y.train[s == i]
-  
-  fit <- tuneRF(train.data, as.factor(train.label), doBest = TRUE) 
-  pred <- predict(fit, test.data)
-  cv.error[i] <- mean(pred != test.label)
-}
-
-# Get the lowest error rate of cv
-best <- which.min(cv.error)
-```
-
 ## Model 
 
 ```{r}
-#system.time -- to find time it takes to run
-rf <- tuneRF(x.train[s != best,], as.factor(y.train[s != best]), ntree = 600, doBest = TRUE)
+#track how long rf takes
+system.time(rf <- tuneRF(x.train[s != best,], as.factor(y.train[s != best]), ntree = 600, doBest = TRUE))
 
 rf_baseline <- randomForest(y.train ~ ., 
                    data = training, ntree = 600,
