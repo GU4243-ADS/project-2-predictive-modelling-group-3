@@ -28,6 +28,11 @@ if(!require("pbapply")){
   install.packages("caret")
 }
 
+if(!require("FNN")){
+  install.packages("FNN")
+}
+
+library(FNN)
 library("EBImage")
 library("gbm")
 library("pbapply")
@@ -61,11 +66,13 @@ In this step, we have a set of controls for the model evaluation.  The code in t
 + (TRUE/FALSE) process features for test set
 
 ```{r exp_setup}
-run.cv            <- TRUE # run cross-validation on the training set
-K                 <- 5    # number of CV folds
-run.feature.train <- TRUE # process features for training set
-run.test          <- TRUE # run evaluation on an independent test set
-run.feature.test  <- TRUE # process features for test set
+trainmodel        <- FALSE # if running models on training data
+testmodel         <- TRUE  # if running models on testing data
+run.cv            <- TRUE  # run cross-validation on the training set
+K                 <- 5     # number of CV folds
+run.feature.train <- FALSE # process features for training set
+run.test          <- TRUE  # run evaluation on an independent test set
+run.feature.test  <- TRUE  # process features for test set
 ```
 
 Using cross-validation or independent test set evaluation, we compare the performance of different classifiers. In this example, we use GBM with different `depth`. In the following code chunk, we list, in a vector, setups (in this case, `depth`) corresponding to model parameters that we will compare. In your project, you will likely be comparing different classifiers than the one considered here and therefore will need to expand this code. You could, for example, assign them numerical IDs and labels specific to your project. 
@@ -92,11 +99,18 @@ for(i in 1:n_files){
 ```
 
 Below, we code dog as 1 and cat as 0. 
-
 ```{r train_label}
+if (trainmodel){
 label_train <- read.table(paste(experiment_dir, "train_label.txt", sep = ""), header = F)
 label_train <- as.numeric(unlist(label_train) == "dog") # turn into a binary -- 1 is dog. 
-#write.csv(label_train, '../output/label_train.csv')
+write.csv(label_train, '../output/label_train.csv')
+}
+
+if (testmodel){
+label_test <- read.table(paste(experiment_dir, "train_label.txt", sep = ""), header = F)
+label_test <- as.numeric(unlist(label_test) == "dog") # turn into a binary -- 1 is dog.
+write.csv(label_test, '../output/label_test.csv')
+}
 ```
 
 ### Step 3: Construct visual features
@@ -107,6 +121,8 @@ For this simple example, we use the row averages of raw pixel values as the visu
 
 # SIFT features
 ```{r SIFT features}
+# training
+if(run.feature.train){
 load('100kmeans.rda')
 
 closest.cluster <- function(x) {
@@ -114,7 +130,7 @@ closest.cluster <- function(x) {
   return(which.min(cluster.dist)[1])
 }
 
-sift_feature_dir <- "../data/train-features/" # This will be modified for different data sets.
+sift_feature_dir <- "../data/train-features/" 
 
 data = list()
 
@@ -133,7 +149,38 @@ for (i in 1:2000){
 }
 
 data = do.call("rbind", data)
+}
 
+
+# testing set
+if(run.feature.test){
+load('100kmeans.rda')
+
+closest.cluster <- function(x) {
+  cluster.dist <- apply(k.out$centers, 1, function(y) sqrt(sum((x-y)^2)))
+  return(which.min(cluster.dist)[1])
+}
+
+sift_feature_dir <- "../data/test-features/"
+
+data = list()
+
+for (i in 1:50){ # need to change number based on how many new sift features we get. 
+  print(i)
+  file = sprintf("pet%i.jpg.sift.RData", i)
+  file_path = paste0(sift_feature_dir,file)
+  load(file_path)
+  feature_clusters <- get.knnx(k.out$centers, features, 1)$nn.index[,1]
+  feature_vec <- rep(0,101)
+  feature_vec[1] = i
+  for (j in 1:length(feature_clusters)){
+  c = feature_clusters[j] + 1 #since the first column is reserved for the index
+  feature_vec[c] = feature_vec[c]+ 1}
+  data[[i]] = feature_vec
+}
+
+data = do.call("rbind", data)
+}
 ```
 
 Change all hog_train to dat_train later!!!!! Below is for SIFT features when we have them. 
