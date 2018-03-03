@@ -3,6 +3,9 @@ To Extract Features from SIFT
 Make sure to copy the train-features folder to <../data/train-features>
 
 ```{r}
+#For getting features
+
+library(FNN)
 features_all = list()
 keypoints_all = list()
 
@@ -16,21 +19,20 @@ for (i in 1:2000){
   keypoints_all[[i]] = keypoints
 }
 
-<<<<<<< HEAD
 features_all = do.call("rbind",features_all)
 ```
 
 Now there should be a features_all, and keypoints_all, both length 2000 lists. pet1.jpg.sift corrosponds to features_all[1], etc.
 
 ```{r}
-#Kmeans stuff
+#Kmeans stuff - DON'T NEED THIS FOR PRESENTATION
 
 km.out = kmeans(features_all, 1000, iter.max = 30000, algorithm = "Lloyd")
 save(km.out, file = '100kmeans.rda')
 ```
 
 ```{r}
-#Loading a pretrained kmeans
+#For Test Data - Loading a pretrained kmeans
 #SIFT features in same place as before
 
 load('100kmeans.rda')
@@ -58,18 +60,6 @@ for (i in 1:2000){
 }
 
 data = do.call("rbind", data)
-=======
-d <- data.frame()
-for (i in 1:2000){
-  d <- rbind(d, c(features_all[[i]]))
-}
-# Attempting to make into a matrix below
-# df <- do.call("rbind",features_all)
-# max.len <- max(sapply(features_all, length))
-# features_all_list <- lapply(features_all, function(x) {c(x, rep(NA, max.len - length(x)))})
-# features_all_matrix <- do.call(rbind, features_all_list)
-#write.csv(features_all, "../output/SIFT_features.csv")
->>>>>>> 8c06288670fdecf40d5d21c7d656a60a365810a7
 
 ```
 
