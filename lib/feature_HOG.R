@@ -1,6 +1,7 @@
 
 ### Authors: Sophie Beiers
-### Based off of code by: Yuting Ma/Tian Zheng
+### Based off of code by: Yuting Ma/Tian Zheng and
+### https://cran.r-project.org/web/packages/OpenImageR/vignettes/The_OpenImageR_package.html
 ### Project 2
 ### ADS Spring 2018
 
@@ -41,5 +42,3 @@ feature<-function(img_dir, export=TRUE){
 HOG_features <- feature(img_dir)
 write.csv(HOG_features,"../output/HOG_features.csv")
 
-
-# may want to use HOG_apply ? https://cran.r-project.org/web/packages/OpenImageR/vignettes/The_OpenImageR_package.html
