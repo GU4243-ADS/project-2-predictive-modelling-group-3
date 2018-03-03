@@ -1,0 +1,45 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library("EBImage")
+setwd("~/GitHub/project-2-predictive-modelling-group-3/data/pets/test.more")
+
+images<-list.files("~/GitHub/project-2-predictive-modelling-group-3/data/pets/test.more") #directory pointed to a new set of altered cats and dogs
+  
+
+for (i in 2644:length(images)){
+  
+img<-readImage(images[i])
+rand.mod<-sample(1:2,1)  
+ 
+  rand.value.a<-runif(1,min=-0.5,max=0.6) #brightness can't go too high
+  rand.value.b<-runif(1,min=0.4,max=1.6)
+  
+  
+  ifelse(rand.mod==1,img<-img+rand.value.a,img<-img*rand.value.b)  
+
+  
+  
+  
+rand.rotate<-sample(1:4,1)
+ifelse(rand.rotate==1,img<-translate(rotate(img, 180), c(50, 0)), img<-img)
+  
+  
+  
+  
+  
+  
+  
+   mypath<-file.path("~","GitHub","project-2-predictive-modelling-group-3","data","pets","Adjusted Images",paste(i,".jpg",sep=""))
+
+     jpeg(file = mypath)
+     
+     plot(img)
+     dev.off()
+}
+
+```

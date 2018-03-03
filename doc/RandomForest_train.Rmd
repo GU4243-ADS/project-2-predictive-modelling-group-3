@@ -18,6 +18,9 @@ if(!require("randomForest")){
 if(!require("caret")){
   install.packages("caret")
 }
+if(!require("rfUtilities")){
+  install.packages("rfUtilities")
+}
 library(randomForest)
 library(caret)
 library(rfUtilities)
