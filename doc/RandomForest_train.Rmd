@@ -23,16 +23,15 @@ library(caret)
 library(rfUtilities)
 ```
 
+```{r}
+set.seed(2008)
+```
 
 ##1.  HOG features
 ```{r}
 features <- read.csv("../output/HOG_features.csv")
 label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
 label.train$x <- as.factor(label.train$x) # x is whether photo is dog or cat
-
-set.seed(2008)
-K <- 15 # number of CV folds
-
 ```
 ## Training and Testing
 ```{r}
@@ -110,11 +109,47 @@ pred_testing <- test(rf, testing)
 ```{r}
 library(R.matlab)
 features <- read.csv("../output/color_features.csv")
-label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
-label.train$x <- as.factor(label.train$x) # x is whether photo is dog or cat
+
+```
+```{r}
+in_train <- createDataPartition(y = label.train$x,
+                                p = 3 / 4, 
+                                list = FALSE)
+
+training <- features[ in_train, ]
+testing  <- features[-in_train, ]
 
 
-lbp <- readMat("../output/testlbp.mat")
+y.train <- label.train[ in_train, 2 ]
+y.test <- label.train[ -in_train, 2 ]
+
+```
+
+```{r}
+train<- function(df, label, N){
+
+  fit <- randomForest(as.factor(y.train) ~ ., data = training, importance = TRUE, ntree = N)
+  return(fit)
+}
+
+test<- function(rfmodel, df){
+  pred <-predict(rfmodel, newdata = df)
+  return (pred)
+}
+
+errors <- c()
+N <- c(100, 200, 300, 400, 500, 600, 700, 800, 900)
+
+for(i in 1:9){
+
+  fit <- train(training, y.train, N[i])
+
+  pred_testing <- test(fit, testing)
+
+  errors[i] <- mean(pred_testing != as.factor(y.test))
+  cat(N[i]," trees has ", 1 - errors[i], "accuracy in prediction rate" )
+
+}
 ```
 
 
@@ -165,36 +200,15 @@ for(i in 1:9){
 ```
 
 ```{r}
-1 - min(errors) ## best model uses 600 trees with a predication accuracy rate of 0.752. 
+1 - min(errors) ## best model uses 300 trees with a predication accuracy rate of 0.752. 
 ```
 
-## Model 
-
-```{r}
-#track how long rf takes
-system.time(rf <- randomForest(as.factor(y.train) ~ ., 
-                   data = training, ntree = 900,
-                   importance = TRUE))
-
-plot(rf)
-rf
-
-# predict using model
-predictions <- predict(rf, newdata = testing, type = "response", 
-                       n.trees = 600)
-# confusion matrix 
-cm <- table(y.test, predictions)
-
-# prediction rate
-mean(y.test == predict(rf, newdata = testing, type = "class"))
-
-
-```
 
 
 ## LBP Features
+### The below model is not ideal. Performed worse than using HOG. 
 ```{r}
-features <- read.csv("../output/lbp-version1.csv")
+features <- read.csv("../output/lbp-version2.csv")
 features <- na.omit(features)
 
 in_train <- createDataPartition(y = label.train$x,
@@ -240,28 +254,7 @@ for(i in 1:9){
 ```
 
 ```{r}
-1 - min(errors) ## best model uses 600 trees with a predication accuracy rate of 0.752. 
+1 - min(errors) ## best model uses 200 trees with a predication accuracy rate of 0.642. 
 ```
 
-## Model 
 
-```{r}
-#track how long rf takes
-system.time(rf <- randomForest(as.factor(y.train) ~ ., 
-                   data = training, ntree = 900,
-                   importance = TRUE, na.action=na.exclude))
-
-plot(rf)
-rf
-
-# predict using model
-predictions <- predict(rf, newdata = testing, type = "response", 
-                       n.trees = 600)
-# confusion matrix 
-cm <- table(y.test, predictions)
-
-# prediction rate
-mean(y.test == predict(rf, newdata = testing, type = "class"))
-
-
-```
