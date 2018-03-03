@@ -45,7 +45,6 @@ We first set the working directory to the location of this .Rmd file  (it should
 
 ```{r wkdir, eval=FALSE}
 setwd("~/Documents/GitHub/project-2-predictive-modelling-group-3/doc")
-set.seed(2018)
 ```
 
 Now we provide directories for the raw images. Here we assume the training set and test set are in different subfolders. 
@@ -66,6 +65,7 @@ In this step, we have a set of controls for the model evaluation.  The code in t
 + (TRUE/FALSE) process features for test set
 
 ```{r exp_setup}
+set.seed(2018)    # set seed
 trainmodel        <- FALSE # if running models on training data
 testmodel         <- TRUE  # if running models on testing data
 run.cv            <- TRUE  # run cross-validation on the training set
@@ -83,18 +83,30 @@ model_values <- seq(5, 10, 2) # trying a few different depths
 model_labels <- paste("GBM with depth =", model_values)
 ```
 
-### Step 2: Import training images class labels.
+### Step 2: Import training and testing images and classification labels.
 
-We read in all the images and store their dimensions in the `dat` matrix.
+We read in all the images and store their dimensions in the `dat` training or testing matrix.
 ```{r}
+# training
 n_files <- length(list.files(img_train_dir)) #2000
-dat <- matrix(NA, nrow = n_files, ncol = 3) 
+dat_train <- matrix(NA, nrow = n_files, ncol = 3) 
 imgs <- vector("list", n_files)
 
 for(i in 1:n_files){
   img <- readImage(paste0(img_train_dir,  "pet", i, ".jpg"))
   imgs[[i]] <- img
-  dat[i, 1:length(dim(img))] <- dim(img)
+  dat_train[i, 1:length(dim(img))] <- dim(img)
+}
+
+# testing
+n_files_test <- length(list.files(img_test_dir)) #2000
+dat_test <- matrix(NA, nrow = n_files_test, ncol = 3) 
+imgs_test <- vector("list", n_files_test)
+
+for(i in 1:n_files_test){
+  img_test <- readImage(paste0(img_test_dir,  "pet", i, ".jpg"))
+  imgs_test[[i]] <- img_test
+  dat_test[i, 1:length(dim(img_test))] <- dim(img_test)
 }
 ```
 
@@ -113,13 +125,13 @@ write.csv(label_test, '../output/label_test.csv')
 }
 ```
 
-### Step 3: Construct visual features
+## Step 3: Construct visual features
 
 For this simple example, we use the row averages of raw pixel values as the visual features. Note that this strategy **only** works for images with the same number of rows. For some other image datasets, the feature function should be able to handle heterogeneous input images. Save the constructed features to the output subfolder.
 
 `feature.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features that are required by all the models you are going to evaluate later. 
 
-# SIFT features
+### SIFT features
 ```{r SIFT features}
 # training
 if(run.feature.train){
@@ -183,6 +195,28 @@ data = do.call("rbind", data)
 }
 ```
 
+### HOG features
+```{r HOG features}
+# training data
+source("../lib/feature_HOG.R")
+tm_feature_train <- NA
+if(run.feature.train){
+  tm_feature_train <- system.time(hog_train <- feature(img_train_dir, export = TRUE))
+}
+#save(hog_train, file = "../output/HOG_features_train.RData")
+
+# testing data
+
+source("../lib/feature_HOG_test.R")
+tm_feature_test <- NA
+if(run.feature.test){
+tm_feature_test <- system.time(hog_test <- feature(img_test_dir, export = TRUE))
+}
+
+save(hog_test, file = "../output/HOG_features_test.RData")
+
+```
+
 Change all hog_train to dat_train later!!!!! Below is for SIFT features when we have them. 
 ```{r rowmeans features}
 # # temporarily using HOG features
@@ -206,27 +240,7 @@ Change all hog_train to dat_train later!!!!! Below is for SIFT features when we 
 #save(dat_test, file = "../output/feature_test.RData")
 ```
 
-HOG features
-```{r HOG features}
-# training data
-source("../lib/feature_HOG.R")
-tm_feature_train <- NA
-if(run.feature.train){
-  tm_feature_train <- system.time(hog_train <- feature(img_train_dir, export = TRUE))
-}
-#save(hog_train, file = "../output/HOG_features.RData")
 
-# testing data
-# this was for if we had a whole new set of images that we wanted to use HOG features on 
-# source("../lib/feature_HOG_test.R")
-# tm_feature_test <- NA
-# if(run.feature.test){
-#   tm_feature_test <- system.time(hog_test <- feature(img_test_dir, export = TRUE))
-# }
-# 
-# save(hog_test, file = "../output/HOG_features_test.RData")
-
-```
 
 ```{r}
 ##### Training/Testing for baseline model -- temporary 

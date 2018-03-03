@@ -4,9 +4,7 @@
 ### https://cran.r-project.org/web/packages/OpenImageR/vignettes/The_OpenImageR_package.html
 ### Project 2
 ### ADS Spring 2018
-
 img_dir <- "../data/pets/train/"
-
 feature<-function(img_dir, export=TRUE){
   
   ### Construct process features for training/testing images
@@ -40,5 +38,6 @@ feature<-function(img_dir, export=TRUE){
 }
 
 HOG_features <- feature(img_dir)
-write.csv(HOG_features,"../output/HOG_features.csv")
+write.csv(HOG_features,"../output/HOG_features_train.csv")
+
 
