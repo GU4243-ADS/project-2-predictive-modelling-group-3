@@ -20,9 +20,18 @@ if(!require("gbm")){
   install.packages("gbm")
 }
 
+if(!require("pbapply")){
+  install.packages("pbapply")
+}
+
+if(!require("pbapply")){
+  install.packages("caret")
+}
+
 library("EBImage")
 library("gbm")
 library("pbapply")
+library("caret")
 ```
 
 ### Step 0: Specify directories.
@@ -61,22 +70,17 @@ run.feature.test  <- TRUE # process features for test set
 
 Using cross-validation or independent test set evaluation, we compare the performance of different classifiers. In this example, we use GBM with different `depth`. In the following code chunk, we list, in a vector, setups (in this case, `depth`) corresponding to model parameters that we will compare. In your project, you will likely be comparing different classifiers than the one considered here and therefore will need to expand this code. You could, for example, assign them numerical IDs and labels specific to your project. 
 At each depth level, makes yes or no response that splits data in half. 
+
 ```{r model_setup}
-model_values <- seq(3, 11, 2) # trying a few different depths 
+model_values <- seq(5, 10, 2) # trying a few different depths 
 model_labels <- paste("GBM with depth =", model_values)
 ```
 
 ### Step 2: Import training images class labels.
 
-
-```{r}
-n_files <- length(list.files(img_train_dir))
-n_files
-```
-
-
 We read in all the images and store their dimensions in the `dat` matrix.
 ```{r}
+n_files <- length(list.files(img_train_dir)) #2000
 dat <- matrix(NA, nrow = n_files, ncol = 3) 
 imgs <- vector("list", n_files)
 
@@ -92,15 +96,8 @@ Below, we code dog as 1 and cat as 0.
 ```{r train_label}
 label_train <- read.table(paste(experiment_dir, "train_label.txt", sep = ""), header = F)
 label_train <- as.numeric(unlist(label_train) == "dog") # turn into a binary -- 1 is dog. 
-write.csv(label_train, '../output/label_train.csv')
+#write.csv(label_train, '../output/label_train.csv')
 ```
-
-Resize all images.
-```{r}
-img_resized = pblapply(imgs, function(img) { resize(img, 128, 128) })
-dim(img_resized[[1]])
-```
-
 
 ### Step 3: Construct visual features
 
@@ -111,23 +108,24 @@ For this simple example, we use the row averages of raw pixel values as the visu
 
 ```{r SIFT features}
 ## having trouble on this section
-sift_feature_dir <- "../data/train-features/" # This will be modified for different data sets.
-img_sift_dir  <- paste(sift_feature_dir, sep="")
-
-train_SIFT<- readRDS('../data/training.RData')
-X_trainSIFT<- train_SIFT[, -5001]
-y_trainSIFT<- train_SIFT$y
+# sift_feature_dir <- "../data/train-features/" # This will be modified for different data sets.
+# img_sift_dir  <- paste(sift_feature_dir, sep="")
+# 
+# train_SIFT<- readRDS('../data/training.RData')
+# X_trainSIFT<- train_SIFT[, -5001]
+# y_trainSIFT<- train_SIFT$y
 ```
 
-Row means features to use temporarily. 
+Change all hog_train to dat_train later!!!!! Below is for SIFT features when we have them. 
 ```{r rowmeans features}
-source("../lib/feature.R")
-# reads in all the image files, calculates row means, stores all info in matrix. 
-
-tm_feature_train <- NA
-if(run.feature.train){
-  tm_feature_train <- system.time(dat_train <- feature(img_train_dir, export = TRUE))
-}
+# # temporarily using HOG features
+# source("../lib/feature.R")
+# # reads in all the image files, calculates row means, stores all info in matrix. 
+# 
+# tm_feature_train <- NA
+# if(run.feature.train){
+#   tm_feature_train <- system.time(dat_train <- feature(img_train_dir, export = TRUE))
+# }
 
 # Work on testing features later
 
@@ -135,22 +133,54 @@ if(run.feature.train){
 # if(run.feature.test){
 #   tm_feature_test <- system.time(dat_test <- feature(img_test_dir, "test",
 #                                                      data_name = "zip", export = TRUE))
-# }
+#  }
 
-save(dat_train, file = "../output/feature_train.RData")
+#save(hog_train, file = "../output/feature_train.RData")
 #save(dat_test, file = "../output/feature_test.RData")
 ```
 
 HOG features
 ```{r HOG features}
+# training data
 source("../lib/feature_HOG.R")
 tm_feature_train <- NA
 if(run.feature.train){
   tm_feature_train <- system.time(hog_train <- feature(img_train_dir, export = TRUE))
 }
 
-save(hog_train, file = "../output/HOG_features.RData")
+#save(hog_train, file = "../output/HOG_features.RData")
 
+# testing data
+# this was for if we had a whole new set of images that we wanted to use HOG features on 
+# source("../lib/feature_HOG_test.R")
+# tm_feature_test <- NA
+# if(run.feature.test){
+#   tm_feature_test <- system.time(hog_test <- feature(img_test_dir, export = TRUE))
+# }
+# 
+# save(hog_test, file = "../output/HOG_features_test.RData")
+
+```
+
+```{r}
+##### Training/Testing for baseline model -- temporary 
+
+features <- read.csv("../output/HOG_features.csv")
+label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
+#label.train$x <- as.factor(label.train$x)
+
+in_train <- createDataPartition(y = label.train$x,
+                                p = 3 / 4, 
+                                list = FALSE)
+
+training <- features[ in_train, ]
+testing  <- features[-in_train, ]
+
+x.train <- features[ in_train, ]
+y.train <- label.train[ in_train, 2 ]
+
+x.test <- features[ -in_train, ]
+y.test <- label.train[ -in_train, 2 ]
 ```
 
 ### Step 4: Train a classification model with training images (and the visual features constructed above)
@@ -169,7 +199,6 @@ Call the train model and test model from library.
   
 ```{r loadlib}
 source("../lib/train.R")
-source("../lib/RandomForest_train.Rmd")
 source("../lib/test.R")
 ```
 Train function runs GBM function and test just uses the fitted training model and our data to make some predictions. 
@@ -185,7 +214,7 @@ if(run.cv){
   err_cv <- array(dim = c(length(model_values), 2))
   for(k in 1:length(model_values)){
     cat("k=", k, "\n")
-    err_cv[k,] <- cv.function(dat_train, label_train, model_values[k], K)
+    err_cv[k,] <- cv.function(training, y.train, model_values[k], K)
   }
   save(err_cv, file = "../output/err_cv.RData")
 }
@@ -222,9 +251,10 @@ par_best <- list(depth = model_best)
 
 * Train the model with the entire training set using the selected model (in this case, model parameter) via cross-validation.
 
+# changed to y.train and training -- change back later before using actual test data (SB)
 ```{r final_train}
 tm_train <- NA
-tm_train <- system.time(fit_train <- train(dat_train, label_train, par_best))
+tm_train <- system.time(fit_train <- train(training, y.train, par_best))
 save(fit_train, file = "../output/fit_train.RData")
 ```
 
@@ -235,12 +265,17 @@ Feed the final training model with the test data.  (Note that for this to truly 
 ```{r test}
 tm_test <- NA
 if(run.test){
-  load(file = paste0("../output/feature_", "zip", "_", "test", ".RData"))
+  load(file = paste0("../output/HOG_features.Rdata"))
   load(file = "../output/fit_train.RData")
-  tm_test <- system.time(pred_test <- test(fit_train, dat_test))
+  tm_test <- system.time(pred_test <- test(fit_train, x.test))
   save(pred_test, file = "../output/pred_test.RData")
 }
+
+table(y.test, pred_test)
+mean(y.test == pred_test) ## 73% accuracy rate
+
 ```
+
 
 ### Summarize Running Time
 
@@ -249,7 +284,7 @@ Prediction performance matters, so does the running times for constructing featu
 Summarizes running time. 
 ```{r running_time}
 cat("Time for constructing training features=", tm_feature_train[1], "s \n")
-cat("Time for constructing testing features=", tm_feature_test[1], "s \n")
+cat("Time for constructing testing features=", tm_feature_test[1], "s \n") # later
 cat("Time for training model=", tm_train[1], "s \n")
 cat("Time for making prediction=", tm_test[1], "s \n")
 ```
