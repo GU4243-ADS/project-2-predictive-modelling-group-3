@@ -1,4 +1,4 @@
-# Project 1: 
+# Project 1:
 ### Output folder
 
-The output directory contains analysis output, processed datasets, logs, or other processed things.
+The output directory contains analysis output, processed datasets, logs, or other processed things. Our image features are in the output directory. 
