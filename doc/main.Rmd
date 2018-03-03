@@ -45,9 +45,9 @@ set.seed(2018)
 
 Now we provide directories for the raw images. Here we assume the training set and test set are in different subfolders. 
 ```{r}
-experiment_dir <- "../data/pets/" # This will be modified for different data sets.
+experiment_dir <- "../data/pets/" 
 img_train_dir  <- paste(experiment_dir, "train/", sep="")
-#img_test_dir   <- paste(experiment_dir, "test/", sep="") # we don't have a training dataset yet -- (SB)
+img_test_dir   <- paste(experiment_dir, "test/", sep="") 
 ```
 
 ### Step 1: Set up controls for model evaluation.
@@ -105,15 +105,35 @@ For this simple example, we use the row averages of raw pixel values as the visu
 
 `feature.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features that are required by all the models you are going to evaluate later. 
 
-
+# SIFT features
 ```{r SIFT features}
-## having trouble on this section
-# sift_feature_dir <- "../data/train-features/" # This will be modified for different data sets.
-# img_sift_dir  <- paste(sift_feature_dir, sep="")
-# 
-# train_SIFT<- readRDS('../data/training.RData')
-# X_trainSIFT<- train_SIFT[, -5001]
-# y_trainSIFT<- train_SIFT$y
+load('100kmeans.rda')
+
+closest.cluster <- function(x) {
+  cluster.dist <- apply(k.out$centers, 1, function(y) sqrt(sum((x-y)^2)))
+  return(which.min(cluster.dist)[1])
+}
+
+sift_feature_dir <- "../data/train-features/" # This will be modified for different data sets.
+
+data = list()
+
+for (i in 1:2000){
+  print(i)
+  file = sprintf("pet%i.jpg.sift.RData", i)
+  file_path = paste0(sift_feature_dir,file)
+  load(file_path)
+  feature_clusters <- get.knnx(k.out$centers, features, 1)$nn.index[,1]
+  feature_vec <- rep(0,101)
+  feature_vec[1] = i
+  for (j in 1:length(feature_clusters)){
+  c = feature_clusters[j] + 1 #since the first column is reserved for the index
+  feature_vec[c] = feature_vec[c]+ 1}
+  data[[i]] = feature_vec
+}
+
+data = do.call("rbind", data)
+
 ```
 
 Change all hog_train to dat_train later!!!!! Below is for SIFT features when we have them. 
@@ -147,7 +167,6 @@ tm_feature_train <- NA
 if(run.feature.train){
   tm_feature_train <- system.time(hog_train <- feature(img_train_dir, export = TRUE))
 }
-
 #save(hog_train, file = "../output/HOG_features.RData")
 
 # testing data
@@ -164,8 +183,8 @@ if(run.feature.train){
 
 ```{r}
 ##### Training/Testing for baseline model -- temporary 
-
-features <- read.csv("../output/HOG_features.csv")
+featers <- data # for sift
+features <- read.csv("../output/HOG_features.csv") # for HOG
 label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
 #label.train$x <- as.factor(label.train$x)
 
@@ -176,10 +195,8 @@ in_train <- createDataPartition(y = label.train$x,
 training <- features[ in_train, ]
 testing  <- features[-in_train, ]
 
-x.train <- features[ in_train, ]
-y.train <- label.train[ in_train, 2 ]
 
-x.test <- features[ -in_train, ]
+y.train <- label.train[ in_train, 2 ]
 y.test <- label.train[ -in_train, 2 ]
 ```
 
@@ -229,7 +246,7 @@ if(run.cv){
   load("../output/err_cv.RData")
   #pdf("../fig/cv_results.pdf", width=7, height=5)
   plot(model_values, err_cv[,1], xlab = "Interaction Depth", ylab = "CV Error",
-       main = "Cross Validation Error", type = "n", ylim = c(0, 0.25))
+       main = "Cross Validation Error", type = "n", ylim = c(0, 0.30))
   points(model_values, err_cv[,1], col = "blue", pch=16)
   lines(model_values, err_cv[,1], col = "blue")
   arrows(model_values, err_cv[,1] - err_cv[,2], model_values, err_cv[,1] + err_cv[,2], 
@@ -241,7 +258,7 @@ if(run.cv){
 * Choose the "best" parameter value
 
 ```{r best_model}
-model_best <- model_values[1]
+model_best <- model_values[3]
 if(run.cv){
   model_best <- model_values[which.min(err_cv[, 1])]
 }
