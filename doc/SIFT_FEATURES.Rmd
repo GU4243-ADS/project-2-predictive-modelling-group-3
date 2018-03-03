@@ -52,9 +52,10 @@ for (i in 1:2000){
   file_path = paste0(sift_feature_dir,file)
   load(file_path)
   feature_clusters <- get.knnx(k.out$centers, features, 1)$nn.index[,1]
-  feature_vec <- rep(0,100)
+  feature_vec <- rep(0,101)
+  feature_vec[1] = i
   for (j in 1:length(feature_clusters)){
-  c = feature_clusters[j]
+  c = feature_clusters[j] + 1 #since the first column is reserved for the index
   feature_vec[c] = feature_vec[c]+ 1}
   data[[i]] = feature_vec
 }
