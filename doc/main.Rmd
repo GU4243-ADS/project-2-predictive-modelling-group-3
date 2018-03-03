@@ -150,7 +150,6 @@ sift_feature_dir <- "../data/train-features/"
 data = list()
 
 for (i in 1:2000){
-  print(i)
   file = sprintf("pet%i.jpg.sift.RData", i)
   file_path = paste0(sift_feature_dir,file)
   load(file_path)
@@ -181,7 +180,6 @@ sift_feature_dir <- "../data/test-features/"
 data = list()
 
 for (i in 1:50){ # need to change number based on how many new sift features we get. 
-  print(i)
   file = sprintf("pet%i.jpg.sift.RData", i)
   file_path = paste0(sift_feature_dir,file)
   load(file_path)
