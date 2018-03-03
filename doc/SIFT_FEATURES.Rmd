@@ -4,7 +4,9 @@ Make sure to copy the train-features folder to <../data/train-features>
 
 ```{r}
 #For getting features
-
+if(!require("FNN")){
+  install.packages("FNN")
+}
 library(FNN)
 features_all = list()
 keypoints_all = list()
