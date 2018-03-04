@@ -5,13 +5,23 @@ output: html_notebook
 
 
 ```{r}
+if(!require("EBImage")){
+  install.packages("EBImage")
+}
+
+if(!require("gtools")){
+  install.packages("gtools")
+}
 library("EBImage")
-setwd("~/GitHub/project-2-predictive-modelling-group-3/data/pets/test.more")
+library("gtools")
+setwd("~/GitHub/project-2-predictive-modelling-group-3/data/pets/train")
 
-images<-list.files("~/GitHub/project-2-predictive-modelling-group-3/data/pets/test.more") #directory pointed to a new set of altered cats and dogs
+images<-list.files("~/GitHub/project-2-predictive-modelling-group-3/data/pets/train") #directory pointed to a new set of unaltered cats and dogs
   
+images<-mixedsort(images)
 
-for (i in 2644:length(images)){
+
+for (i in 1:length(images)){
   
 img<-readImage(images[i])
 rand.mod<-sample(1:2,1)  
@@ -34,7 +44,7 @@ ifelse(rand.rotate==1,img<-translate(rotate(img, 180), c(50, 0)), img<-img)
   
   
   
-   mypath<-file.path("~","GitHub","project-2-predictive-modelling-group-3","data","pets","Adjusted Images",paste(i,".jpg",sep=""))
+mypath<-file.path("~","GitHub","project-2-predictive-modelling-group-3","data","pets","train",paste("pet",i+2000,".jpg",sep=""))
 
      jpeg(file = mypath)
      

@@ -219,6 +219,11 @@ system.time(rf <- randomForest(as.factor(y.train) ~ .,
 system.time(pred_testing <- test(rf, testing)) # 0.034 seconds to predict
 ```
 
+```{r}
+randomforestmodel = randomForest(as.factor(y.train) ~ .,data = training, ntree = 600)
+save(randomforestmodel, file = "randomforestSIFT.rda")
+```
+
 
 
 ## LBP Features
