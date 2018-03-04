@@ -15,6 +15,9 @@ in_train <- createDataPartition(y = label.train$x,
 training <- features[ in_train, ]
 testing  <- features[-in_train, ]
 
+testing <- testing[ ,-1]
+training <- training[, -1]
+
 x.train <- features[ in_train, ]
 y.train <- label.train[ in_train, 2 ]
 
