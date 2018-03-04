@@ -14,11 +14,6 @@ Sbin<-seq(0,1,length.out = 10)
 Vbin<-seq(0,0.005,length.out = 10)
 
 
-# for (i in 1:length(img_names)){
-#   name = img_names[i]
-#   name = gsub("[^0-9]","",name)
-#   img_names[i] = name}
-
 ##RGB features
 rgb_features<-data.frame(matrix(NA,2000,1001))
 colnames(rgb_features)<-c('Image',paste('rbg_',1:1000,sep=""))
@@ -57,18 +52,15 @@ for(i in 1:2000){
 
 
 
-# for (i in 1:length(img_names)){
-#   name = img_names[i]
-#   name = gsub("[^0-9]","",name)
-#   img_names[i] = name}
-
 color_features<-merge(rgb_features,hsv_features,by.x = "Image",by.y="Image")
-write.csv(color_features,"/Users/yunli/Documents/GitHub/project-2-predictive-modelling-group-3/output/color_features1.csv",row.names = F)
 
-color_features <- read.csv("/Users/yunli/Documents/GitHub/project-2-predictive-modelling-group-3/output/color_features1.csv")
-color_features$Image=gsub("[^0-9]","",color_features$Image)
+for (i in 1:length(color_features[,1])){
+  color_features[,1] = gsub("[^0-9]","",color_features[,1])
+}
 
-color_features[order(color_features$Image)]
+color_features[,1] = as.numeric(color_features[,1])
+color_features = color_features[order(color_features[,1]),]
 
-write.csv(color_features,"/Users/yunli/Documents/GitHub/project-2-predictive-modelling-group-3/output/color_features.csv",row.names = F)
+
+write.csv(color_features,"/Users/yunli/Documents/GitHub/project-2-predictive-modelling-group-3/output/color_features2.csv",row.names = F)
 
