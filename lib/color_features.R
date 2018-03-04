@@ -62,5 +62,5 @@ color_features[,1] = as.numeric(color_features[,1])
 color_features = color_features[order(color_features[,1]),]
 
 
-write.csv(color_features,"/Users/yunli/Documents/GitHub/project-2-predictive-modelling-group-3/output/color_features2.csv",row.names = F)
+write.csv(color_features,"/Users/yunli/Documents/GitHub/project-2-predictive-modelling-group-3/output/color_features.csv",row.names = F)
 
