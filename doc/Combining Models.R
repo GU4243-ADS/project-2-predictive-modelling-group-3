@@ -15,9 +15,9 @@ siftfeature_train = siftfeature_complete[-sift_sep, ]
 #RANDOM FOREST
 randomforestmodel = randomForest(siftfeature_train$Label ~ ., data = siftfeature_train, ntree = 600)
 
-load("randomforestSIFT.rda") # called randomforestmodel
+#load("randomforestSIFT.rda") # called randomforestmodel
 
-pred_random <- test(randomforestmodel, siftfeature_test[,2:101])
+pred_random <- predict(randomforestmodel, siftfeature_test[,2:101])
 pred_random  = as.numeric(pred_random) - 1
 error_rate_random <- mean(pred_random != siftfeature_test$Label)
 

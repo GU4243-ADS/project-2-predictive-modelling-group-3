@@ -90,31 +90,6 @@ model_labels <- paste("GBM with depth =", model_values)
 
 ## Step 2: Import training and testing images and classification labels.
 
-We read in all the images and store their dimensions in the `dat` training or testing matrix.
-```{r}
-# training
-n_files <- length(list.files(img_train_dir)) #2000
-dat_train <- matrix(NA, nrow = n_files, ncol = 3) 
-imgs <- vector("list", n_files)
-
-for(i in 1:n_files){
-  img <- readImage(paste0(img_train_dir,  "pet", i, ".jpg"))
-  imgs[[i]] <- img
-  dat_train[i, 1:length(dim(img))] <- dim(img)
-}
-
-# testing
-n_files_test <- length(list.files(img_test_dir))
-dat_test <- matrix(NA, nrow = n_files_test, ncol = 3) 
-imgs_test <- vector("list", n_files_test)
-
-for(i in 1:n_files_test){
-  img_test <- readImage(paste0(img_test_dir,  "pet", i, ".jpg"))
-  imgs_test[[i]] <- img_test
-  dat_test[i, 1:length(dim(img_test))] <- dim(img_test)
-}
-```
-
 Below, we code dog as 1 and cat as 0. 
 ```{r train_label}
 if (trainmodel){
@@ -124,7 +99,7 @@ write.csv(label_train, '../output/label_train.csv')
 }
 
 if (testmodel){
-label_test <- read.table(paste(experiment_dir, "train_label.txt", sep = ""), header = F)
+label_test <- read.table(paste(experiment_dir, "test_label.txt", sep = ""), header = F)
 label_test <- as.numeric(unlist(label_test) == "dog") # turn into a binary -- 1 is dog.
 write.csv(label_test, '../output/label_test.csv')
 }
@@ -140,16 +115,12 @@ write.csv(label_test, '../output/label_test.csv')
 if(run.feature.train){
 load('100kmeans.rda')
 
-closest.cluster <- function(x) {
-  cluster.dist <- apply(k.out$centers, 1, function(y) sqrt(sum((x-y)^2)))
-  return(which.min(cluster.dist)[1])
-}
-
 sift_feature_dir <- "../data/train-features/" 
+num_images = length(list.files(path = sift_feature_dir))
 
 data = list()
 
-for (i in 1:2000){
+for (i in 1:num_images){
   file = sprintf("pet%i.jpg.sift.RData", i)
   file_path = paste0(sift_feature_dir,file)
   load(file_path)
@@ -162,24 +133,19 @@ for (i in 1:2000){
   data[[i]] = feature_vec
 }
 
-data_train = do.call("rbind", data)
+sift_data_train = do.call("rbind", data)
 }
 
 
 # testing set
 if(run.feature.test){
 load('100kmeans.rda')
-
-closest.cluster <- function(x) {
-  cluster.dist <- apply(k.out$centers, 1, function(y) sqrt(sum((x-y)^2)))
-  return(which.min(cluster.dist)[1])
-}
-
 sift_feature_dir <- "../data/test-features/"
+num_images = length(list.files(path = sift_feature_dir))
 
 data = list()
 
-for (i in 1:50){ # need to change number based on how many new sift features we get. 
+for (i in 1:num_images){  
   file = sprintf("pet%i.jpg.sift.RData", i)
   file_path = paste0(sift_feature_dir,file)
   load(file_path)
@@ -192,62 +158,36 @@ for (i in 1:50){ # need to change number based on how many new sift features we 
   data[[i]] = feature_vec
 }
 
-data_test = do.call("rbind", data)
+sift_data_test = do.call("rbind", data)
 }
 ```
 
 ### HOG features
 ```{r HOG features}
-source("../lib/features.R")
-tm_feature_train <- NA
-if(run.feature.train){
-  HOG = TRUE
-  SIFT = FALSE
-  tm_feature_train <- system.time(dat_train <- feature(img_train_dir, export = TRUE))
-  save(dat_train, file = "../output/features1_train.RData")
-}
 
 # 
-# # training data
-# source("../lib/feature_HOG.R")
-# tm_feature_train <- NA
-# if(run.feature.train){
-#   tm_feature_train <- system.time(hog_train <- feature(img_train_dir, export = TRUE))
-#   save(hog_train, file = "../output/HOG_features_train.RData")
-# }
+# training data
+source("../lib/feature_HOG.R")
+tm_feature_train <- NA
+if(run.feature.train){
+  tm_feature_train <- system.time(hog_train <- feature(img_train_dir, export = TRUE))
+  save(hog_train, file = "../output/HOG_features_train.RData")
+}
 # 
-# # testing data
-# source("../lib/feature_HOG_test.R")
-# tm_feature_test <- NA
-# if(run.feature.test){
-#   tm_feature_test <- system.time(hog_test <- feature(img_test_dir, export = TRUE))
-#   save(hog_test, file = "../output/HOG_features_test.RData")
-# }
+# testing data
+source("../lib/feature_HOG_test.R")
+tm_feature_test <- NA
+if(run.feature.test){
+  tm_feature_test <- system.time(hog_test <- feature(img_test_dir, export = TRUE))
+  save(hog_test, file = "../output/HOG_features_test.RData")
+}
 
 
 #save(hog_train, file = "../output/feature_train.RData")
 #save(dat_test, file = "../output/feature_test.RData") # a reminder to change things to dat_train or dat_test if necessary
 ```
 
-
 ### Training Baseline Model on Split Training Data
-```{r}
-# ##### Training/Testing for baseline model -- temporary 
-# features <- data # for sift
-# label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
-# #label.train$x <- as.factor(label.train$x)
-# 
-# in_train <- createDataPartition(y = label.train$x,
-#                                 p = 3 / 4,
-#                                 list = FALSE)
-# 
-# training <- features[ in_train, ]
-# testing  <- features[-in_train, ]
-# 
-# 
-# y.train <- label.train[ in_train, 2 ]
-# y.test <- label.train[ -in_train, 2 ]
-```
 
 ### Step 4: Train a classification model with training images (and the visual features constructed above)
 
@@ -276,11 +216,15 @@ Train function runs GBM function and test just uses the fitted training model an
 ```{r runcv, message=FALSE, warning=FALSE}
 source("../lib/cross_validation.R")
 
+label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
+label.test <- read.csv("../output/label_test.csv",header=TRUE, as.is = TRUE)
+
+
 if(run.cv){
   err_cv <- array(dim = c(length(model_values), 2))
   for(k in 1:length(model_values)){
     cat("k=", k, "\n")
-    err_cv[k,] <- cv.function(training, y.train, model_values[k], K)
+    err_cv[k,] <- cv.function(sift_data_train, label.train[,2], model_values[k], K)
   }
   save(err_cv, file = "../output/err_cv.RData")
 }
@@ -306,7 +250,7 @@ if(run.cv){
 * Choose the "best" parameter value
 
 ```{r best_model}
-model_best <- model_values[3]
+model_best <- model_values[2]
 if(run.cv){
   model_best <- model_values[which.min(err_cv[, 1])]
 }
@@ -320,8 +264,8 @@ par_best <- list(depth = model_best)
 ```{r final_train}
 # need to edit train.R and test.R with our winning model 
 tm_train <- NA
-tm_train <- system.time(fit_train <- train(data_train, label.train[ ,2], par_best))
-save(fit_train, file = "../output/fit_train.RData")
+tm_train <- system.time(baseline_train <- train(sift_data_train, label.train[ ,2], par_best))
+save(baseline_train, file = "../output/baseline_train.RData")
 ```
 
 ## Step 5: Make prediction 
@@ -331,9 +275,8 @@ Feed the final training model with the test data.  (Note that for this to truly 
 ```{r test}
 tm_test <- NA
 if(run.test){
-  #load(file = paste0("../output/HOG_features.Rdata")) # don't think we need this 
-  load(file = "../output/fit_train.RData")
-  tm_test <- system.time(pred_test <- test(fit_train, data_test))
+  load(file = "../output/baseline_train.RData")
+  tm_test <- system.time(pred_test <- test(baseline_train, sift_data_test))
   save(pred_test, file = "../output/pred_test.RData")
 }
 
