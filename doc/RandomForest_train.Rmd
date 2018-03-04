@@ -205,6 +205,11 @@ system.time(randomForest(as.factor(y.train) ~ .,
                    data = training, ntree = 600)) # 9.675 seconds
 ```
 
+```{r}
+randomforestmodel = randomForest(as.factor(y.train) ~ .,data = training, ntree = 600)
+save(randomforestmodel, file = "randomforestSIFT.rda")
+```
+
 
 
 ## LBP Features
