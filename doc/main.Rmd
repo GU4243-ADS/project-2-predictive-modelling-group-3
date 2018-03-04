@@ -198,21 +198,31 @@ data_test = do.call("rbind", data)
 
 ### HOG features
 ```{r HOG features}
-# training data
-source("../lib/feature_HOG.R")
+source("../lib/features.R")
 tm_feature_train <- NA
 if(run.feature.train){
-  tm_feature_train <- system.time(hog_train <- feature(img_train_dir, export = TRUE))
-  save(hog_train, file = "../output/HOG_features_train.RData")
+  HOG = TRUE
+  SIFT = FALSE
+  tm_feature_train <- system.time(dat_train <- feature(img_train_dir, export = TRUE))
+  save(dat_train, file = "../output/features1_train.RData")
 }
 
-# testing data
-source("../lib/feature_HOG_test.R")
-tm_feature_test <- NA
-if(run.feature.test){
-  tm_feature_test <- system.time(hog_test <- feature(img_test_dir, export = TRUE))
-  save(hog_test, file = "../output/HOG_features_test.RData")
-}
+# 
+# # training data
+# source("../lib/feature_HOG.R")
+# tm_feature_train <- NA
+# if(run.feature.train){
+#   tm_feature_train <- system.time(hog_train <- feature(img_train_dir, export = TRUE))
+#   save(hog_train, file = "../output/HOG_features_train.RData")
+# }
+# 
+# # testing data
+# source("../lib/feature_HOG_test.R")
+# tm_feature_test <- NA
+# if(run.feature.test){
+#   tm_feature_test <- system.time(hog_test <- feature(img_test_dir, export = TRUE))
+#   save(hog_test, file = "../output/HOG_features_test.RData")
+# }
 
 
 #save(hog_train, file = "../output/feature_train.RData")
@@ -306,7 +316,9 @@ par_best <- list(depth = model_best)
 
 * Train the model with the entire training set using the selected model (in this case, model parameter) via cross-validation.
 
+
 ```{r final_train}
+# need to edit train.R and test.R with our winning model 
 tm_train <- NA
 tm_train <- system.time(fit_train <- train(data_train, label.train[ ,2], par_best))
 save(fit_train, file = "../output/fit_train.RData")
