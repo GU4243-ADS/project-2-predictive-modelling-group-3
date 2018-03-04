@@ -4,6 +4,8 @@ author: "Sophie Beiers"
 date: "2/24/2018"
 output: html_document
 ---
+The following script runs through random forest models based on the number of trees deemed best to predict well in the testing data. Each model is run on a different set of features, or combination of features. The model that predicted with the highest accuracy rate (76.6%) was the random forest model using SIFT features and 400 trees. 
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -32,7 +34,7 @@ library(R.matlab)
 
 
 ##1.  HOG features
-The random forest model using HOG features performed the best in the testing data with an accuracy rate of 74.8%. 
+The random forest model using HOG features performed with an accuracy rate of 74.8%. 
 ```{r}
 features <- read.csv("../output/HOG_features.csv")
 label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
@@ -162,6 +164,7 @@ system.time(pred_testing <- test(rf, testing)) # 0.36 seconds to predict
 ```
 
 ## 3. SIFT Features
+This was the best model! With a prediction accuracy of 76.6%!
 ```{r}
 # Training/Testing
 features <- data_train
@@ -225,7 +228,7 @@ save(randomforestmodel, file = "randomforestSIFT.rda")
 
 
 
-## LBP Features
+## 4. LBP Features
 The below model is not ideal. Performed worse than using HOG or SIFT. 
 ```{r}
 # Training/Testing 
@@ -286,7 +289,7 @@ system.time(pred_testing <- test(rf, testing)) # 0.034
 ```
 
 
-## Combined SIFT & HOG
+## 5. Combined SIFT & HOG
 ```{r}
 # Training/Testing 
 features <- read.csv("../output/SIFTHOG.csv")
@@ -348,7 +351,7 @@ system.time(pred_testing <- test(rf, testing)) # 0.038
 
 
 
-## Combined SIFT & HOG & LBP
+## 6. Combined SIFT & HOG & LBP
 ```{r}
 # Training/Testing 
 features <- read.csv("../output/SIFTHOGLBP.csv")
@@ -410,7 +413,7 @@ system.time(pred_testing <- test(rf, testing)) # 0.041
 ```
 
 
-## Combined SIFT & HOG & LBP & Color
+## 7. Combined SIFT & HOG & LBP & Color
 ```{r}
 # Training/Testing 
 features <- read.csv("../output/SIFTHOGLBPCOLOR.csv")
