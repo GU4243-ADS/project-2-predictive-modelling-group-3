@@ -84,7 +84,6 @@ for(i in 1:9){
 
 }
 
-fit 
 ```
 
 ```{r}
@@ -97,9 +96,9 @@ fit
 
 # how long does it take? 
 system.time(rf <- randomForest(as.factor(y.train) ~ ., 
-                   data = training, ntree = 700)) # 7.966 seconds elapsed 
+                   data = training, ntree = 700)) # 8.444 seconds elapsed 
 
-system.time(pred_testing <- test(rf, testing))
+system.time(pred_testing <- test(rf, testing)) # 0.80 seconds for prediction
 ```
 
 
@@ -212,11 +211,11 @@ for(i in 1:9){
 
 ```{r}
 # best model
-1 - min(errors) ## best model uses 600 trees with a predication accuracy rate of 0.74. 
+1 - min(errors) ## best model uses 400 trees with a predication accuracy rate of 0.766. 
 system.time(rf <- randomForest(as.factor(y.train) ~ ., 
-                   data = training, ntree = 200)) # 5.206 seconds
+                   data = training, ntree = 400)) # 4.616 seconds
 
-system.time(pred_testing <- test(rf, testing)) # 0.034 seconds to predict
+system.time(pred_testing <- test(rf, testing)) # 0.043 seconds to predict
 ```
 
 ```{r}
@@ -279,11 +278,11 @@ for(i in 1:9){
 
 ```{r}
 # best model
-1 - min(errors) ## best model uses 100 trees with a predication accuracy rate of 0.664. 
+1 - min(errors) ## best model uses 400 trees with a predication accuracy rate of 0.664. 
 system.time(rf <- randomForest(as.factor(y.train) ~ ., 
-                   data = training, ntree = 100)) # 1.652 seconds elapsed
+                   data = training, ntree = 400)) # 2.335 seconds elapsed
 
-system.time(pred_testing <- test(rf, testing)) # 0.014
+system.time(pred_testing <- test(rf, testing)) # 0.034
 ```
 
 
@@ -340,11 +339,11 @@ for(i in 1:9){
 
 ```{r}
 # best model
-1 - min(errors) ## best model uses 200 trees with a predication accuracy rate of 0.768. 
+1 - min(errors) ## best model uses 900 trees with a predication accuracy rate of 0.748. 
 system.time(rf <- randomForest(as.factor(y.train) ~ ., 
-                   data = training, ntree = 200)) # 4.700 seconds elapsed
+                   data = training, ntree = 900)) # 4.808 seconds elapsed
 
-system.time(pred_testing <- test(rf, testing)) # 0.041
+system.time(pred_testing <- test(rf, testing)) # 0.038
 ```
 
 
@@ -403,9 +402,9 @@ for(i in 1:9){
 
 ```{r}
 # best model
-1 - min(errors) ## best model uses 200 trees with a predication accuracy rate of 0.74. 
+1 - min(errors) ## best model uses 300 trees with a predication accuracy rate of 0.74. 
 system.time(rf <- randomForest(as.factor(y.train) ~ ., 
-                   data = training, ntree = 200)) # 5.539 seconds elapsed
+                   data = training, ntree = 300)) # 5.539 seconds elapsed
 
 system.time(pred_testing <- test(rf, testing)) # 0.041
 ```
