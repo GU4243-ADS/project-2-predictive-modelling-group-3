@@ -37,6 +37,7 @@ library("EBImage")
 library("gbm")
 library("pbapply")
 library("caret")
+library(randomForest)
 ```
 
 ## Step 0: Specify directories.
@@ -182,9 +183,28 @@ if(run.feature.test){
   save(hog_test, file = "../output/HOG_features_test.RData")
 }
 
+```
 
-#save(hog_train, file = "../output/feature_train.RData")
-#save(dat_test, file = "../output/feature_test.RData") # a reminder to change things to dat_train or dat_test if necessary
+```{r}
+#Combining Features - SIFTHOG TRAIN
+siftfeature_train <- sift_data_train
+siftfeature_train$mergeid <- seq(1, nrow(siftfeature_train), 1)
+
+HOGfeature_train <- hog_train
+HOGfeature_train <- data.frame(HOGfeature_train[,-1])
+HOGfeature_train$mergeid <- seq(1, nrow(HOGfeature_train), 1)
+SIFTHOG_train <- merge(HOGfeature_train, siftfeature_train, by=c("mergeid"))
+#write.csv(SIFTHOG_train,"../output/SIFTHOG_train.CSV")
+
+#Testing FEATURES
+siftfeature_test <- sift_data_test
+siftfeature_test$mergeid <- seq(1, nrow(siftfeature_test), 1)
+
+HOGfeature_test <- hog_test
+HOGfeature_test <- data.frame(HOGfeature_test[,-1])
+HOGfeature_test$mergeid <- seq(1, nrow(HOGfeature_test), 1)
+SIFTHOG_test <- merge(HOGfeature_test, siftfeature_test, by=c("mergeid"))
+#write.csv(SIFTHOG_test,"../output/SIFTHOG_test.CSV")
 ```
 
 ### Training Baseline Model on Split Training Data
@@ -266,6 +286,40 @@ par_best <- list(depth = model_best)
 tm_train <- NA
 tm_train <- system.time(baseline_train <- train(sift_data_train, label.train[ ,2], par_best))
 save(baseline_train, file = "../output/baseline_train.RData")
+```
+## Training Advanced Model
+
+```{r}
+label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
+label.test <- read.csv("../output/label_test.csv",header=TRUE, as.is = TRUE)
+
+#Training randomforestmodel
+randomforestmodel = randomForest(label.train[,2] ~ ., data = SIFTHOG_train, ntree = 900)
+
+#Training svmmodel
+train_svm = function(sift_train){
+  fitControl = trainControl(method = 'cv', number = 2)
+  svmGrid = expand.grid(C = c(0.5,1,2))
+  start_time_svm = Sys.time() 
+  svm.fit = train(Label~., 
+                  data = sift_train,
+                  method = "svmLinear",
+                  preProc = c('center', 'scale'),
+                  tuneGrid = svmGrid,
+                  trControl = fitControl)
+  end_time_svm = Sys.time() 
+  svm_time = end_time_svm - start_time_svm 
+  return(list(fit = svm.fit, time = svm_time))
+}
+
+test_svm = function(fit_train, sift_test){
+  pred = predict(fit_train$fit, newdata = siftfeature_test)
+  return(pred)
+}
+
+svm = train_svm(siftfeature_train)
+
+
 ```
 
 ## Step 5: Make prediction 
