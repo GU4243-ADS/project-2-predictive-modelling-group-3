@@ -204,7 +204,7 @@ HOGfeature_test <- hog_test
 HOGfeature_test <- data.frame(HOGfeature_test[,-1])
 HOGfeature_test$mergeid <- seq(1, nrow(HOGfeature_test), 1)
 SIFTHOG_test <- merge(HOGfeature_test, siftfeature_test, by=c("mergeid"))
-#write.csv(SIFTHOG_test,"../output/SIFTHOG_test.CSV")
+write.csv(SIFTHOG_test,"../output/SIFTHOG_test.CSV")
 ```
 
 ### Training Baseline Model on Split Training Data
@@ -293,31 +293,20 @@ save(baseline_train, file = "../output/baseline_train.RData")
 label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
 label.test <- read.csv("../output/label_test.csv",header=TRUE, as.is = TRUE)
 
-#Training randomforestmodel
-randomforestmodel = randomForest(label.train[,2] ~ ., data = SIFTHOG_train, ntree = 900)
+in_train <- createDataPartition(y = label.train$x, p = 3/4, list = FALSE)
 
-#Training svmmodel
-train_svm = function(sift_train){
-  fitControl = trainControl(method = 'cv', number = 2)
-  svmGrid = expand.grid(C = c(0.5,1,2))
-  start_time_svm = Sys.time() 
-  svm.fit = train(Label~., 
-                  data = sift_train,
-                  method = "svmLinear",
-                  preProc = c('center', 'scale'),
-                  tuneGrid = svmGrid,
-                  trControl = fitControl)
-  end_time_svm = Sys.time() 
-  svm_time = end_time_svm - start_time_svm 
-  return(list(fit = svm.fit, time = svm_time))
-}
+#if loading from csv
+SIFTHOG <- read.csv("../output/SIFTHOG.csv")
+SIFTHOG_train = SIFTHOG[in_train,]
+SIFTHOG_val = SIFTHOG[-in_train,]
 
-test_svm = function(fit_train, sift_test){
-  pred = predict(fit_train$fit, newdata = siftfeature_test)
-  return(pred)
-}
+SIFTHOG_train = SIFTHOG_train[,-2]
+SIFTHOG_val <- SIFTHOG_val[,-2]
 
-svm = train_svm(siftfeature_train)
+train_labels = label.train[in_train,2]
+val_labels = label.train[-in_train,2]
+
+SIFTHOG_test <- read.csv("../output/SIFTHOG_test.csv")
 
 
 ```
@@ -346,11 +335,14 @@ mean(y.test == pred_test) ## 72.8% accuracy rate for baseline with SIFT features
 
 #RANDOM FOREST
 
-#load("randomforestSIFT.rda") # called rf
+#val 
+#load("../output/randomforestmodel_final.rda") # called rf
 
-pred_random <- predict(rf, SIFTHOG_test)
+#testingfinal
+
+pred_random <- predict(rf, SIFTHOG_val)
 pred_random  = as.numeric(pred_random) - 1
-error_rate_random <- mean(pred_random != siftfeature_test$Label)
+error_rate_random <- mean(pred_random != val_labels)
 
 #SVM
 
@@ -367,9 +359,11 @@ error_rate_svm <- 1 - mean(pred_svm == siftfeature_test$Label)
 
 #Logistic Regression
 
-load("../output/logisticmodel.rda")
+load("../output/logisticregression_SIFT+HOG_1500.rda") #logistic.fit.1500
+load("../output/logisticregression_SIFT+HOG_2000.rda") #logistic.fit.1500
 
-logistic_pred <- predict(logistic.fit, newdata = siftfeature_test[,2:101], "response")
+testdata = SIFTHOG_val
+logistic_pred <- predict(logistic.fit.1500, newdata = SIFTHOG_val, "response")
 
 logistic_pred <- data.frame(logistic_pred)
 logistic_pred$V2 = 0.5
