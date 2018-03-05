@@ -14,20 +14,59 @@ In your final Project 2 repo, there should be an R markdown file called `main.Rm
 
 This file is meant to be a template for evaluating models used for image analysis (and could be generalized for any predictive modeling). You should update it according to your models/codes but your final document should have precisely the same structure. 
 
-```{r, warning = FALSE}
+
+```r
 if(!require("EBImage")){
   source("https://bioconductor.org/biocLite.R")
   biocLite("EBImage")
 }
+```
 
+```
+## Loading required package: EBImage
+```
+
+```r
 if(!require("gbm")){
   install.packages("gbm")
 }
+```
 
+```
+## Loading required package: gbm
+```
+
+```
+## Loading required package: survival
+```
+
+```
+## Loading required package: lattice
+```
+
+```
+## Loading required package: splines
+```
+
+```
+## Loading required package: parallel
+```
+
+```
+## Loaded gbm 2.1.3
+```
+
+```r
 if(!require("pbapply")){
   install.packages("pbapply")
 }
+```
 
+```
+## Loading required package: pbapply
+```
+
+```r
 if(!require("pbapply")){
   install.packages("caret")
 }
@@ -35,25 +74,76 @@ if(!require("pbapply")){
 if(!require("FNN")){
   install.packages("FNN")
 }
+```
 
+```
+## Loading required package: FNN
+```
+
+```r
 library(FNN)
 library("EBImage")
 library("gbm")
 library("pbapply")
 library("caret")
+```
+
+```
+## Loading required package: ggplot2
+```
+
+```
+## 
+## Attaching package: 'caret'
+```
+
+```
+## The following object is masked from 'package:survival':
+## 
+##     cluster
+```
+
+```r
 library(randomForest)
+```
+
+```
+## randomForest 4.6-12
+```
+
+```
+## Type rfNews() to see new features/changes/bug fixes.
+```
+
+```
+## 
+## Attaching package: 'randomForest'
+```
+
+```
+## The following object is masked from 'package:ggplot2':
+## 
+##     margin
+```
+
+```
+## The following object is masked from 'package:EBImage':
+## 
+##     combine
 ```
 
 ## Step 0: Specify directories.
 
 We first set the working directory to the location of this .Rmd file. Then we specify our training and testing data. To train the initial baseline model, we used the `caret` package to partition the data into training and testing sets. This code can be seen commented out. 
 
-```{r wkdir, eval=FALSE}
+
+```r
 setwd("~/Documents/GitHub/project-2-predictive-modelling-group-3/doc")
 ```
 
 Now we provide directories for the raw images. Here we assume the training set and test set are in different subfolders. 
-```{r}
+
+```r
 experiment_dir <- "../data/pets/" 
 img_train_dir  <- paste(experiment_dir, "train/", sep="")
 img_test_dir   <- paste(experiment_dir, "test/", sep="") 
@@ -72,7 +162,8 @@ In this step, we have a set of controls for the model evaluation.  The code in t
 + (TRUE/FALSE) run evaluation on an independent test set
 + (TRUE/FALSE) process features for test set
 
-```{r exp_setup}
+
+```r
 set.seed(2018)    # set seed
 run.cv            <- FALSE  # run cross-validation on the training set
 K                 <- 5     # number of CV folds
@@ -83,7 +174,8 @@ run.feature.test  <- TRUE  # process features for test set
 
 Using cross-validation or independent test set evaluation, we compare the performance of different classifiers. In this example, we use GBM with different `depth`. In the following code chunk, we list, in a vector, setups (in this case, `depth`) corresponding to model parameters that we will compare. 
 
-```{r model_setup}
+
+```r
 model_values <- seq(5, 10, 2) # trying a few different depths 
 model_labels <- paste("GBM with depth =", model_values)
 ```
@@ -91,7 +183,8 @@ model_labels <- paste("GBM with depth =", model_values)
 ## Step 2: Import training and testing images and classification labels.
 
 Below, we code dog as 1 and cat as 0. 
-```{r train_label}
+
+```r
 if (run.feature.train){
 label_train <- read.table(paste(experiment_dir, "train_label.txt", sep = ""), header = F)
 label_train <- as.numeric(unlist(label_train) == "dog") # turn into a binary -- 1 is dog. 
@@ -108,7 +201,8 @@ write.csv(label_test, '../output/label_test.csv')
 ## Step 3: Construct visual features
 
 ### SIFT features
-```{r SIFT features}
+
+```r
 # training
 if(run.feature.train){
 load('100kmeans.rda')
@@ -163,8 +257,8 @@ sift_data_test = do.call("rbind", data)
 ```
 
 ### HOG features
-```{r HOG features}
 
+```r
 # 
 # training data
 if(run.feature.train){
@@ -182,11 +276,26 @@ tm_feature_test <- NA
   tm_feature_test <- system.time(hog_test <- feature(img_test_dir, export = TRUE))
   save(hog_test, file = "../output/HOG_features_test.RData")
 }
+```
 
+```
+## Warning: package 'OpenImageR' was built under R version 3.4.3
+```
+
+```
+## 
+## Attaching package: 'OpenImageR'
+```
+
+```
+## The following objects are masked from 'package:EBImage':
+## 
+##     readImage, writeImage
 ```
 
 ### Combining Features
-```{r}
+
+```r
 #Combining Features - SIFTHOG TRAIN
 if (run.feature.train){
 siftfeature_train <- sift_data_train
@@ -227,7 +336,8 @@ Call the train model and test model from library for the baseline training.
   + Input: an R object that contains a trained classifier.
   + Output: an R object of class label predictions on the test set. If there are multiple classifiers under evaluation, there should be multiple sets of label predictions. 
   
-```{r loadlib}
+
+```r
 source("../lib/train.R")
 source("../lib/test.R")
 ```
@@ -237,7 +347,8 @@ Train function runs GBM function and test just uses the fitted training model an
 
 * Do model selection for baseline model.  Here we choose between model parameters, in this case the interaction depth for GBM. 
 
-```{r runcv, message=FALSE, warning=FALSE}
+
+```r
 source("../lib/cross_validation.R")
 
 label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
@@ -254,7 +365,8 @@ if(run.cv){
 }
 ```
 Counts number of misclassifications. This now calculates the best decision. 
-```{r cv_vis}
+
+```r
 if(run.cv){
   load("../output/err_cv.RData")
   #pdf("../figs/cv_results_baseline.pdf", width=7, height=5)
@@ -270,7 +382,8 @@ if(run.cv){
 
 * Choose the "best" parameter value
 
-```{r best_model}
+
+```r
 model_best <- model_values[2]
 if(run.cv){
   model_best <- model_values[which.min(err_cv[, 1])]
@@ -281,7 +394,8 @@ par_best <- list(depth = model_best)
 
 * Train the model with the entire training set using the selected model (in this case, model parameter) via cross-validation.
 
-```{r final_train}
+
+```r
 # need to edit train.R and test.R with our winning model 
 if (run.feature.train){
 tm_train <- NA
@@ -292,7 +406,8 @@ save(baseline_train, file = "../output/baseline_train.RData")
 
 ## Step 5. Training Advanced Model
 
-```{r}
+
+```r
 label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
 label.test <- read.csv("../output/label_test.csv",header=TRUE, as.is = TRUE)
 
@@ -315,7 +430,8 @@ val_labels = label.train[-in_train,2]
 
 Feed the final training model with the test data.  (Note that for this to truly be 'test' data, it should have had no part of the training procedure used above.) 
 
-```{r test}
+
+```r
 #Baseline Model
 tm_test <- NA
 if(run.test){
@@ -325,12 +441,25 @@ if(run.test){
 }
 
 table(label.test[ ,2], pred_test)
-mean(label.test[ ,2] == pred_test) ## 72.8% accuracy rate for baseline with SIFT features and random partitioned training set
-
-
 ```
 
-```{r}
+```
+##    pred_test
+##      0  1
+##   0  9 10
+##   1  1 30
+```
+
+```r
+mean(label.test[ ,2] == pred_test) ## 72.8% accuracy rate for baseline with SIFT features and random partitioned training set
+```
+
+```
+## [1] 0.78
+```
+
+
+```r
 #Advanced Model
 
 labels = label.test[,2]
@@ -373,7 +502,14 @@ error_rate_svm <- 1 - mean(pred_svm == labels)
 load("../output/logisticregression_SIFT+HOG_2000.rda") #logistic.fit.2000
 
 logistic_pred <- predict(logistic.fit.2000, newdata = testdata, "response")
+```
 
+```
+## Warning in predict.lm(object, newdata, se.fit, scale = 1, type =
+## ifelse(type == : prediction from a rank-deficient fit may be misleading
+```
+
+```r
 logistic_pred <- data.frame(logistic_pred)
 logistic_pred$V2 = 0.5
 for (i in 1:nrow(logistic_pred)){
@@ -396,7 +532,6 @@ for (i in 1:length(pred_combined)){
 }
 
 error_rate_combined = 1 - mean(pred_combined == labels)
-
 ```
 
 ### Summarize Running Time
@@ -404,7 +539,8 @@ error_rate_combined = 1 - mean(pred_combined == labels)
 Prediction performance matters, so does the running times for constructing features and for training the model, especially when the computation resource is limited. 
 
 Summarizes running time. 
-```{r running_time}
+
+```r
 if(run.feature.train){
 cat("Time for constructing training features=", tm_feature_train[1], "s \n")
 cat("Time for training model=", tm_train[1], "s \n")
@@ -414,4 +550,9 @@ if(run.feature.test){
 cat("Time for constructing testing features=", tm_feature_test[1], "s \n") # later
 cat("Time for making prediction=", tm_test[1], "s \n")
 }
+```
+
+```
+## Time for constructing testing features= 1.18 s 
+## Time for making prediction= 0.006 s
 ```
