@@ -327,6 +327,7 @@ svm = train_svm(siftfeature_train)
 Feed the final training model with the test data.  (Note that for this to truly be 'test' data, it should have had no part of the training procedure used above.) 
 
 ```{r test}
+#Baseline Model
 tm_test <- NA
 if(run.test){
   load(file = "../output/baseline_train.RData")
@@ -340,6 +341,60 @@ mean(y.test == pred_test) ## 72.8% accuracy rate for baseline with SIFT features
 
 ```
 
+```{r}
+#Advanced Model
+
+#RANDOM FOREST
+
+#load("randomforestSIFT.rda") # called rf
+
+pred_random <- predict(rf, SIFTHOG_test)
+pred_random  = as.numeric(pred_random) - 1
+error_rate_random <- mean(pred_random != siftfeature_test$Label)
+
+#SVM
+
+load("../output/linearsvmsift.rda") # called svm
+
+test_svm = function(fit_train, sift_test){
+  pred = predict(fit_train$fit, newdata = siftfeature_test)
+  return(pred)
+}
+
+pred_svm = test_svm(svm,SIFTHOG_test)
+pred_svm = as.numeric(pred_svm) - 1
+error_rate_svm <- 1 - mean(pred_svm == siftfeature_test$Label)
+
+#Logistic Regression
+
+load("../output/logisticmodel.rda")
+
+logistic_pred <- predict(logistic.fit, newdata = siftfeature_test[,2:101], "response")
+
+logistic_pred <- data.frame(logistic_pred)
+logistic_pred$V2 = 0.5
+for (i in 1:nrow(logistic_pred)){
+  logistic_pred[i, 2] <- which.max(logistic_pred[i, ])-1}
+
+pred_lr = logistic_pred
+for (i in 1:length(pred_lr)){
+  if (pred_lr[i]){ pred_lr[i] = 0
+  }
+  else{ pred_lr[i] = 1}
+}
+
+error_rate_lr = 1 - mean(pred_lr == siftfeature_test$Label)
+
+###
+pred_combined = rep(0,length(pred_lr))
+for (i in 1:length(pred_combined)){
+  vote = pred_random[i] + pred_svm[i] + pred_lr[i]
+  if (vote > 1){ pred_combined[i] = 1}
+}
+
+error_rate_combined = 1 - mean(pred_combined == siftfeature_test$Label)
+
+```
 
 ### Summarize Running Time
 
