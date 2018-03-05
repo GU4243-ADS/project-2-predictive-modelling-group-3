@@ -2,7 +2,7 @@
 library(caret)
 setwd("~/Documents/GitHub/project-2-predictive-modelling-group-3/doc")
 
-features <- read.csv("../output/lbp-version1.csv")
+features <- read.csv("../output/lbp-version2.csv")
 label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
 label.train$x <- as.factor(label.train$x) # x is whether photo is dog or cat
 
@@ -18,26 +18,27 @@ testing  <- features[-in_train, ]
 testing <- testing[ ,-1]
 training <- training[, -1]
 
-x.train <- features[ in_train, ]
+# x.train <- features[ in_train, ]
 y.train <- label.train[ in_train, 2 ]
 
-x.test <- features[ -in_train, ]
+# x.test <- features[ -in_train, ]
 y.test <- label.train[ -in_train, 2 ]
 
-start <- Sys.time()
+train_start <- Sys.time()
 
 #logitic regression
 logistic.fit <- glm(y.train~., 
                     data = training, 
                     family = "binomial")
 summary(logistic.fit)
-
+train_end <- Sys.time()
+train_time = train_end - train_start
 #prediction
-
+pre_start <- Sys.time()
 logistic_pred <- predict(logistic.fit, newdata = testing, "response")
-end <- Sys.time()
+pre_end <- Sys.time()
 
-time = end - start
+pre_time = pre_end - pre_start
 
 logistic_pred <- data.frame(logistic_pred)
 logistic_pred$V2 = 0.5
@@ -47,7 +48,7 @@ for (i in 1:nrow(logistic_pred)){
 
 accuracy = mean(logistic_pred[,2] == y.test)
 
-r = list(lr_accuracy = 1-accuracy, lr_time = time)
+r = list(lr_accuracy = 1-accuracy, lr_train_time = train_time, lr_pre_time = pre_time)
 r         
 
 
