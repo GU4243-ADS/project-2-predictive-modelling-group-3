@@ -1,4 +1,4 @@
 # Project 1:
 ### Figs folder
 
-The figs directory contains the figures and images. This directory only contains generated files; that is, one should always be able to delete the contents and regenerate them.
+The figs directory contains figures and images used in the project. This directory only contains generated files; that is, one should always be able to delete the contents and regenerate them.
