@@ -293,6 +293,7 @@ system.time(pred_testing <- test(rf, testing)) # 0.034
 ```{r}
 # Training/Testing 
 features <- read.csv("../output/SIFTHOG.csv")
+features <- features[ ,-2]
 
 in_train <- createDataPartition(y = label.train$x,
                                 p = 3 / 4, 
@@ -342,11 +343,17 @@ for(i in 1:9){
 
 ```{r}
 # best model
-1 - min(errors) ## best model uses 900 trees with a predication accuracy rate of 0.748. 
+#1 - min(errors) ## best model uses 900 trees with a predication accuracy rate of 0.748. 
 system.time(rf <- randomForest(as.factor(y.train) ~ ., 
                    data = training, ntree = 900)) # 4.808 seconds elapsed
 
-system.time(pred_testing <- test(rf, testing)) # 0.038
+save(rf, file = "../output/randomForest_train.rda")
+
+#system.time(pred_testing <- test(rf, testing)) # 0.038
+
+system.time(rf_all <- randomForest(as.factor(label.train[ ,2]) ~ ., 
+                   data = features, ntree = 900))
+save(rf_all, file = "../output/randomForest_full.rda")
 ```
 
 
