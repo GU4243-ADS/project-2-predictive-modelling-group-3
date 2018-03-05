@@ -197,10 +197,10 @@ SIFTHOG_train <- merge(HOGfeature_train, siftfeature_train, by=c("mergeid"))
 #write.csv(SIFTHOG_train,"../output/SIFTHOG_train.CSV")
 
 #Testing FEATURES
-siftfeature_test <- sift_data_test
+siftfeature_test <- data.frame(sift_data_test)
 siftfeature_test$mergeid <- seq(1, nrow(siftfeature_test), 1)
 
-HOGfeature_test <- hog_test
+HOGfeature_test <- data.frame(hog_test)
 HOGfeature_test <- data.frame(HOGfeature_test[,-1])
 HOGfeature_test$mergeid <- seq(1, nrow(HOGfeature_test), 1)
 SIFTHOG_test <- merge(HOGfeature_test, siftfeature_test, by=c("mergeid"))
@@ -297,6 +297,7 @@ in_train <- createDataPartition(y = label.train$x, p = 3/4, list = FALSE)
 
 #if loading from csv
 SIFTHOG <- read.csv("../output/SIFTHOG.csv")
+
 SIFTHOG_train = SIFTHOG[in_train,]
 SIFTHOG_val = SIFTHOG[-in_train,]
 
@@ -333,51 +334,58 @@ mean(y.test == pred_test) ## 72.8% accuracy rate for baseline with SIFT features
 ```{r}
 #Advanced Model
 
+labels = label.test[,2]
+labels = val_labels
+testdata = SIFTHOG_test
+
+combnames = names(SIFTHOG_train)
+colnames(SIFTHOG_test) <- c(combnames)
+
 #RANDOM FOREST
 
 #val 
-#load("../output/randomforestmodel_final.rda") # called rf
+load("../output/randomforestmodel_final_all.rda") # called rf
 
 #testingfinal
 
-pred_random <- predict(rf, SIFTHOG_val)
+pred_random <- predict(rf, testdata)
 pred_random  = as.numeric(pred_random) - 1
-error_rate_random <- mean(pred_random != val_labels)
+error_rate_random <- mean(pred_random != labels)
 
 #SVM
 
-load("../output/linearsvmsift.rda") # called svm
+load("../output/linearsvmtrain-SIFTHOG1500.rda") # called svm1500
+load("../output/linearsvmtrain-SIFTHOG2000.rda") # called svm2000
 
-test_svm = function(fit_train, sift_test){
-  pred = predict(fit_train$fit, newdata = siftfeature_test)
+test_svm = function(fit_train, testdata){
+  pred = predict(fit_train$fit, newdata = testdata)
   return(pred)
 }
 
-pred_svm = test_svm(svm,SIFTHOG_test)
+pred_svm = test_svm(svm2000,testdata)
 pred_svm = as.numeric(pred_svm) - 1
-error_rate_svm <- 1 - mean(pred_svm == siftfeature_test$Label)
+error_rate_svm <- 1 - mean(pred_svm == labels)
 
 #Logistic Regression
 
 load("../output/logisticregression_SIFT+HOG_1500.rda") #logistic.fit.1500
-load("../output/logisticregression_SIFT+HOG_2000.rda") #logistic.fit.1500
+load("../output/logisticregression_SIFT+HOG_2000.rda") #logistic.fit.2000
 
-testdata = SIFTHOG_val
-logistic_pred <- predict(logistic.fit.1500, newdata = SIFTHOG_val, "response")
+logistic_pred <- predict(logistic.fit.1500, newdata = testdata, "response")
 
 logistic_pred <- data.frame(logistic_pred)
 logistic_pred$V2 = 0.5
 for (i in 1:nrow(logistic_pred)){
   logistic_pred[i, 2] <- which.max(logistic_pred[i, ])-1}
 
-pred_lr = logistic_pred
+pred_lr = logistic_pred[,2]
 for (i in 1:length(pred_lr)){
   if (pred_lr[i]){ pred_lr[i] = 0
   }
   else{ pred_lr[i] = 1}
 }
 
-error_rate_lr = 1 - mean(pred_lr == siftfeature_test$Label)
+error_rate_lr = 1 - mean(pred_lr == labels)
 
 ###
 pred_combined = rep(0,length(pred_lr))
@@ -386,7 +394,7 @@ for (i in 1:length(pred_combined)){
   if (vote > 1){ pred_combined[i] = 1}
 }
 
-error_rate_combined = 1 - mean(pred_combined == siftfeature_test$Label)
+error_rate_combined = 1 - mean(pred_combined == labels)
 
 ```
 
