@@ -70,19 +70,17 @@ In this step, we have a set of controls for the model evaluation.  The code in t
 
 ```{r exp_setup}
 set.seed(2018)    # set seed
-trainmodel        <- TRUE # if running models on training data
-testmodel         <- TRUE  # if running models on testing data
-run.cv            <- TRUE  # run cross-validation on the training set
+run.cv            <- FALSE  # run cross-validation on the training set
 K                 <- 5     # number of CV folds
-run.feature.train <- TRUE # process features for training set
+run.feature.train <- FALSE # process features for training set
 run.test          <- TRUE  # run evaluation on an independent test set
 run.feature.test  <- TRUE  # process features for test set
 ```
 
 Using cross-validation or independent test set evaluation, we compare the performance of different classifiers. In this example, we use GBM with different `depth`. In the following code chunk, we list, in a vector, setups (in this case, `depth`) corresponding to model parameters that we will compare. 
 
-????In your project, you will likely be comparing different classifiers than the one considered here and therefore will need to expand this code. You could, for example, assign them numerical IDs and labels specific to your project. 
-????At each depth level, makes yes or no response that splits data in half. 
+In your project, you will likely be comparing different classifiers than the one considered here and therefore will need to expand this code. You could, for example, assign them numerical IDs and labels specific to your project. 
+At each depth level, makes yes or no response that splits data in half. 
 
 ```{r model_setup}
 model_values <- seq(5, 10, 2) # trying a few different depths 
@@ -93,13 +91,13 @@ model_labels <- paste("GBM with depth =", model_values)
 
 Below, we code dog as 1 and cat as 0. 
 ```{r train_label}
-if (trainmodel){
+if (run.feature.train){
 label_train <- read.table(paste(experiment_dir, "train_label.txt", sep = ""), header = F)
 label_train <- as.numeric(unlist(label_train) == "dog") # turn into a binary -- 1 is dog. 
 write.csv(label_train, '../output/label_train.csv')
 }
 
-if (testmodel){
+if (run.feature.test){
 label_test <- read.table(paste(experiment_dir, "test_label.txt", sep = ""), header = F)
 label_test <- as.numeric(unlist(label_test) == "dog") # turn into a binary -- 1 is dog.
 write.csv(label_test, '../output/label_test.csv')
@@ -132,6 +130,8 @@ for (i in 1:num_images){
   c = feature_clusters[j] + 1 #since the first column is reserved for the index
   feature_vec[c] = feature_vec[c]+ 1}
   data[[i]] = feature_vec
+
+
 }
 
 sift_data_train = do.call("rbind", data)
@@ -168,17 +168,18 @@ sift_data_test = do.call("rbind", data)
 
 # 
 # training data
+if(run.feature.train){
 source("../lib/feature_HOG.R")
 tm_feature_train <- NA
-if(run.feature.train){
   tm_feature_train <- system.time(hog_train <- feature(img_train_dir, export = TRUE))
   save(hog_train, file = "../output/HOG_features_train.RData")
 }
 # 
 # testing data
+if(run.feature.test){
 source("../lib/feature_HOG_test.R")
 tm_feature_test <- NA
-if(run.feature.test){
+
   tm_feature_test <- system.time(hog_test <- feature(img_test_dir, export = TRUE))
   save(hog_test, file = "../output/HOG_features_test.RData")
 }
@@ -187,6 +188,7 @@ if(run.feature.test){
 
 ```{r}
 #Combining Features - SIFTHOG TRAIN
+if (run.feature.train){
 siftfeature_train <- sift_data_train
 siftfeature_train$mergeid <- seq(1, nrow(siftfeature_train), 1)
 
@@ -196,7 +198,10 @@ HOGfeature_train$mergeid <- seq(1, nrow(HOGfeature_train), 1)
 SIFTHOG_train <- merge(HOGfeature_train, siftfeature_train, by=c("mergeid"))
 #write.csv(SIFTHOG_train,"../output/SIFTHOG_train.CSV")
 
+}
+
 #Testing FEATURES
+if (run.feature.test){
 siftfeature_test <- data.frame(sift_data_test)
 siftfeature_test$mergeid <- seq(1, nrow(siftfeature_test), 1)
 
@@ -205,6 +210,7 @@ HOGfeature_test <- data.frame(HOGfeature_test[,-1])
 HOGfeature_test$mergeid <- seq(1, nrow(HOGfeature_test), 1)
 SIFTHOG_test <- merge(HOGfeature_test, siftfeature_test, by=c("mergeid"))
 write.csv(SIFTHOG_test,"../output/SIFTHOG_test.CSV")
+}
 ```
 
 ### Training Baseline Model on Split Training Data
@@ -283,9 +289,11 @@ par_best <- list(depth = model_best)
 
 ```{r final_train}
 # need to edit train.R and test.R with our winning model 
+if (run.feature.train){
 tm_train <- NA
 tm_train <- system.time(baseline_train <- train(sift_data_train, label.train[ ,2], par_best))
 save(baseline_train, file = "../output/baseline_train.RData")
+}
 ```
 ## Training Advanced Model
 
@@ -307,7 +315,6 @@ SIFTHOG_val <- SIFTHOG_val[,-2]
 train_labels = label.train[in_train,2]
 val_labels = label.train[-in_train,2]
 
-SIFTHOG_test <- read.csv("../output/SIFTHOG_test.csv")
 
 
 ```
@@ -326,7 +333,7 @@ if(run.test){
 }
 
 table(label.test[ ,2], pred_test)
-mean(y.test == pred_test) ## 72.8% accuracy rate for baseline with SIFT features and random partitioned training set
+mean(label.test[ ,2] == pred_test) ## 72.8% accuracy rate for baseline with SIFT features and random partitioned training set
 
 
 ```
@@ -335,26 +342,28 @@ mean(y.test == pred_test) ## 72.8% accuracy rate for baseline with SIFT features
 #Advanced Model
 
 labels = label.test[,2]
-labels = val_labels
-testdata = SIFTHOG_test
-
+#labels = val_labels
+SIFTHOG_test <- read.csv("../output/SIFTHOG_test.csv")
 combnames = names(SIFTHOG_train)
 colnames(SIFTHOG_test) <- c(combnames)
+testdata = SIFTHOG_test
 
 #RANDOM FOREST
 
 #val 
-load("../output/randomforestmodel_final_all.rda") # called rf
+#load("../output/randomForest_train.rda") # called rf
+load("../output/randomForest_full.rda") # called rf_all
+
 
 #testingfinal
 
-pred_random <- predict(rf, testdata)
+pred_random <- predict(rf_all, testdata)
 pred_random  = as.numeric(pred_random) - 1
 error_rate_random <- mean(pred_random != labels)
 
 #SVM
 
-load("../output/linearsvmtrain-SIFTHOG1500.rda") # called svm1500
+#load("../output/linearsvmtrain-SIFTHOG1500.rda") # called svm1500
 load("../output/linearsvmtrain-SIFTHOG2000.rda") # called svm2000
 
 test_svm = function(fit_train, testdata){
@@ -368,10 +377,10 @@ error_rate_svm <- 1 - mean(pred_svm == labels)
 
 #Logistic Regression
 
-load("../output/logisticregression_SIFT+HOG_1500.rda") #logistic.fit.1500
+#load("../output/logisticregression_SIFT+HOG_1500.rda") #logistic.fit.1500
 load("../output/logisticregression_SIFT+HOG_2000.rda") #logistic.fit.2000
 
-logistic_pred <- predict(logistic.fit.1500, newdata = testdata, "response")
+logistic_pred <- predict(logistic.fit.2000, newdata = testdata, "response")
 
 logistic_pred <- data.frame(logistic_pred)
 logistic_pred$V2 = 0.5
@@ -404,8 +413,13 @@ Prediction performance matters, so does the running times for constructing featu
 
 Summarizes running time. 
 ```{r running_time}
+if(run.feature.train){
 cat("Time for constructing training features=", tm_feature_train[1], "s \n")
-cat("Time for constructing testing features=", tm_feature_test[1], "s \n") # later
 cat("Time for training model=", tm_train[1], "s \n")
+}
+
+if(run.feature.test){
+cat("Time for constructing testing features=", tm_feature_test[1], "s \n") # later
 cat("Time for making prediction=", tm_test[1], "s \n")
+}
 ```
