@@ -26,7 +26,7 @@ summary(logistic.fit)
 # #prediction
 # pre_start <- Sys.timet()
 testing <- read.csv("../output/SIFTHOG_test.csv")
-testing <- testing[,-2]
+testing <- testing[,-1]
 
 logistic_pred <- predict(logistic.fit, newdata = testing, "response")
 
