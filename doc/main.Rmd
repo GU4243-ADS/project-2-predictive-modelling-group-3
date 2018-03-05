@@ -79,9 +79,6 @@ run.feature.test  <- TRUE  # process features for test set
 
 Using cross-validation or independent test set evaluation, we compare the performance of different classifiers. In this example, we use GBM with different `depth`. In the following code chunk, we list, in a vector, setups (in this case, `depth`) corresponding to model parameters that we will compare. 
 
-In your project, you will likely be comparing different classifiers than the one considered here and therefore will need to expand this code. You could, for example, assign them numerical IDs and labels specific to your project. 
-At each depth level, makes yes or no response that splits data in half. 
-
 ```{r model_setup}
 model_values <- seq(5, 10, 2) # trying a few different depths 
 model_labels <- paste("GBM with depth =", model_values)
@@ -105,8 +102,6 @@ write.csv(label_test, '../output/label_test.csv')
 ```
 
 ## Step 3: Construct visual features
-
-????`feature.R` should be the wrapper for all your feature engineering functions and options. The function `feature( )` should have options that correspond to different scenarios for your project and produces an R object that contains features that are required by all the models you are going to evaluate later. 
 
 ### SIFT features
 ```{r SIFT features}
@@ -186,6 +181,7 @@ tm_feature_test <- NA
 
 ```
 
+### Combining Features
 ```{r}
 #Combining Features - SIFTHOG TRAIN
 if (run.feature.train){
@@ -213,13 +209,11 @@ write.csv(SIFTHOG_test,"../output/SIFTHOG_test.CSV")
 }
 ```
 
-### Training Baseline Model on Split Training Data
 
-### Step 4: Train a classification model with training images (and the visual features constructed above)
+## Step 4: Train a classification model with training images (and the visual features constructed above) & Training Baseline Model on Split Training Data
 
-Call the train model and test model from library. 
+Call the train model and test model from library for the baseline training. 
 
-`train.R` and `test.R` should be wrappers for all your model training steps and your classification/prediction steps. 
 + `train.R`
   + Input: a path that points to the training set features.
   + Input: an R object of training sample labels.
@@ -235,9 +229,9 @@ source("../lib/test.R")
 ```
 Train function runs GBM function and test just uses the fitted training model and our data to make some predictions. 
 
-#### Model selection with cross-validation
+### Model selection with cross-validation
 
-* Do model selection.  Here we choose between model parameters, in this case the interaction depth for GBM. 
+* Do model selection for baseline model.  Here we choose between model parameters, in this case the interaction depth for GBM. 
 
 ```{r runcv, message=FALSE, warning=FALSE}
 source("../lib/cross_validation.R")
@@ -255,10 +249,7 @@ if(run.cv){
   save(err_cv, file = "../output/err_cv.RData")
 }
 ```
-Counts number of misclassifications.
-
-
-This now calculates the best decision. 
+Counts number of misclassifications. This now calculates the best decision. 
 ```{r cv_vis}
 if(run.cv){
   load("../output/err_cv.RData")
@@ -286,7 +277,6 @@ par_best <- list(depth = model_best)
 
 * Train the model with the entire training set using the selected model (in this case, model parameter) via cross-validation.
 
-
 ```{r final_train}
 # need to edit train.R and test.R with our winning model 
 if (run.feature.train){
@@ -295,7 +285,8 @@ tm_train <- system.time(baseline_train <- train(sift_data_train, label.train[ ,2
 save(baseline_train, file = "../output/baseline_train.RData")
 }
 ```
-## Training Advanced Model
+
+## 5. Training Advanced Model
 
 ```{r}
 label.train <- read.csv("../output/label_train.csv",header=TRUE, as.is = TRUE)
@@ -314,9 +305,6 @@ SIFTHOG_val <- SIFTHOG_val[,-2]
 
 train_labels = label.train[in_train,2]
 val_labels = label.train[-in_train,2]
-
-
-
 ```
 
 ## Step 5: Make prediction 
