@@ -202,11 +202,11 @@ SIFTHOG_train <- merge(HOGfeature_train, siftfeature_train, by=c("mergeid"))
 
 #Testing FEATURES
 if (run.feature.test){
-siftfeature_test <- data.frame(sift_data_test)
+siftfeature_test <- data.frame(sift_data_test[,-1])
 siftfeature_test$mergeid <- seq(1, nrow(siftfeature_test), 1)
 
 HOGfeature_test <- data.frame(hog_test)
-HOGfeature_test <- data.frame(HOGfeature_test[,-1])
+HOGfeature_test <- data.frame(HOGfeature_test)
 HOGfeature_test$mergeid <- seq(1, nrow(HOGfeature_test), 1)
 SIFTHOG_test <- merge(HOGfeature_test, siftfeature_test, by=c("mergeid"))
 write.csv(SIFTHOG_test,"../output/SIFTHOG_test.CSV")
@@ -336,7 +336,7 @@ mean(label.test[ ,2] == pred_test) ## 72.8% accuracy rate for baseline with SIFT
 labels = label.test[,2]
 #labels = val_labels
 SIFTHOG_test <- read.csv("../output/SIFTHOG_test.csv")
-combnames = names(SIFTHOG_train)
+combnames = names(SIFTHOG[,-2])
 colnames(SIFTHOG_test) <- c(combnames)
 testdata = SIFTHOG_test
 
@@ -394,6 +394,11 @@ for (i in 1:length(pred_combined)){
   vote = pred_random[i] + pred_svm[i] + pred_lr[i]
   if (vote > 1){ pred_combined[i] = 1}
 }
+
+write.csv(pred_random,"pred_random.csv")
+write.csv(pred_svm,"pred_svm.csv")
+write.csv(pred_lr,"pred_lr.csv")
+write.csv(pred_combined,"pred_combined.csv")
 
 error_rate_combined = 1 - mean(pred_combined == labels)
 
